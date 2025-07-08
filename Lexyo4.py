@@ -109,11 +109,11 @@ if regime_fiscal == "LMNP réel":
 
     st.markdown(f"""
     **Amortissements annuels estimés :**
-    - Bâtiment ({duree_amort_bat} ans) : {amortissement_batiment:.2f} €
-    - Travaux ({duree_amort_travaux} ans) : {amortissement_travaux:.2f} €
-    - Mobilier ({duree_amort_mobilier} ans) : {amortissement_mobilier:.2f} €
-    - Frais d'agence ({duree_amort_agence} ans) : {amortissement_agence:.2f} €
-    - Frais de dossier ({duree_amort_dossier} ans) : {amortissement_dossier:.2f} €
+    - Bâtiment : {amortissement_batiment:.2f} €
+    - Travaux : {amortissement_travaux:.2f} €
+    - Mobilier : {amortissement_mobilier:.2f} €
+    - Frais d'agence : {amortissement_agence:.2f} €
+    - Frais de dossier : {amortissement_dossier:.2f} €
     """)
 # --- Rentabilité sur 10 ans ---
 st.header("5. Rentabilité sur 10 ans")
