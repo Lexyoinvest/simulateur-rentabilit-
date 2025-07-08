@@ -94,7 +94,6 @@ revenu_annuel = loyer_mensuel * 12
 tf = st.number_input("Taxe foncière annuelle (€)", min_value=0.0, step=100.0)
 
 # Charges diverses
-total_charges = 0
 charges_copro = st.number_input("Charges de copropriété annuelles (€)", min_value=0.0, step=100.0)
 comptabilite = st.number_input("Frais de comptabilité annuels (€)", min_value=0.0, step=100.0)
 assurance_pno = st.number_input("Assurance PNO annuelle (€)", min_value=0.0, step=100.0)
@@ -104,6 +103,13 @@ frais_bancaires = st.number_input("Frais bancaires annuels (€)", min_value=0.0
 frais_agence_location = st.number_input("Frais de gestion locative annuels (€)", min_value=0.0, step=100.0)
 
 charges_total_annuelles = sum([charges_copro, comptabilite, assurance_pno, assurance_gli, entretien, frais_bancaires, frais_agence_location])
+
+# Choix du TMI et des prélèvements sociaux
+col_ir, col_ps = st.columns(2)
+with col_ir:
+    taux_ir = st.number_input("Taux marginal d'imposition (IR) %", min_value=0.0, max_value=100.0, value=30.0, step=0.1) / 100
+with col_ps:
+    taux_ps = st.number_input("Taux des prélèvements sociaux %", min_value=0.0, max_value=100.0, value=17.2, step=0.1) / 100
 
 # Placeholder : traitement fiscal simplifié uniquement LMNP réel pour l’instant
 if regime_fiscal == "LMNP réel":
@@ -138,8 +144,8 @@ if regime_fiscal == "LMNP réel":
                     deficit_reportable -= resultat_fiscal
                     resultat_fiscal = 0
 
-        impot_ir = resultat_fiscal * 0.3
-        ps = resultat_fiscal * 0.172
+        impot_ir = resultat_fiscal * taux_ir
+        ps = resultat_fiscal * taux_ps
 
         cashflow_mensuel = (revenu_annuel - mensualite_totale * 12 - tf - charges_total_annuelles - impot_ir - ps) / 12
 
