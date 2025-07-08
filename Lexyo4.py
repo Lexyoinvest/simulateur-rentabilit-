@@ -112,7 +112,6 @@ if regime_fiscal == "LMNP réel":
     - Bâtiment : {amortissement_batiment:.2f} €
     - Travaux : {amortissement_travaux:.2f} €
     - Mobilier : {amortissement_mobilier:.2f} €
-    - Frais d'agence : {amortissement_agence:.2f} €
     - Frais de dossier : {amortissement_dossier:.2f} €
     """)
 # --- Rentabilité sur 10 ans ---
