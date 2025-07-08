@@ -31,6 +31,7 @@ with col3:
 frais_agence = st.number_input("Frais d’agence (€)", min_value=0.0, step=100.0)
 frais_dossier = st.number_input("Frais de dossier bancaire (€)", min_value=0.0, step=100.0)
 caution = st.number_input("Caution bancaire (€)", min_value=0.0, step=100.0)
+mobilier = st.number_input("Valeur du mobilier (€)", min_value=0.0, step=100.0)
 
 apport = st.number_input("Apport personnel (€)", min_value=0.0, step=1000.0)
 frais_notaire = round(0.08 * prix_bien)
@@ -87,8 +88,28 @@ def generer_tableau_amortissement(capital, taux_annuel, duree_annees, taux_assur
 tableau_amortissement = generer_tableau_amortissement(montant_emprunt, taux, duree, taux_assurance)
 st.dataframe(tableau_amortissement, use_container_width=True)
 
+# --- Amortissements LMNP réel ---
+if regime_fiscal == "LMNP réel":
+    st.header("4. Détails des amortissements")
+    valeur_terrain = 0.2 * prix_bien
+    valeur_batiment = prix_bien - valeur_terrain
+    amortissement_batiment = valeur_batiment / 30
+    amortissement_travaux = travaux / 10
+    amortissement_mobilier = mobilier / 7
+    amortissement_agence = frais_agence / 5
+    amortissement_dossier = frais_dossier / 5
+
+    st.markdown(f"""
+    **Amortissements annuels estimés :**
+    - Bâtiment (30 ans) : {amortissement_batiment:.2f} €
+    - Travaux (10 ans) : {amortissement_travaux:.2f} €
+    - Mobilier (7 ans) : {amortissement_mobilier:.2f} €
+    - Frais d'agence (5 ans) : {amortissement_agence:.2f} €
+    - Frais de dossier (5 ans) : {amortissement_dossier:.2f} €
+    """)
+
 # --- Rentabilité sur 10 ans ---
-st.header("4. Rentabilité sur 10 ans")
+st.header("5. Rentabilité sur 10 ans")
 loyer_mensuel = st.number_input("Loyer mensuel brut (€)", min_value=0.0, step=10.0)
 revenu_annuel = loyer_mensuel * 12
 tf = st.number_input("Taxe foncière annuelle (€)", min_value=0.0, step=100.0)
@@ -119,16 +140,17 @@ if regime_fiscal == "LMNP réel":
     for annee in range(1, 11):
         interets_annuels = tableau_amortissement["Intérêts"][(annee - 1) * 12:annee * 12].sum()
         assurance_annuelle = tableau_amortissement["Assurance"][(annee - 1) * 12:annee * 12].sum()
-        amortissement = (prix_bien - 0.2 * prix_bien) / 30
+
+        amortissement_total = amortissement_batiment + amortissement_travaux + amortissement_mobilier + amortissement_agence + amortissement_dossier
 
         resultat_fiscal = revenu_annuel - interets_annuels - assurance_annuelle - tf - charges_total_annuelles
 
         amorti_possible = max(0, resultat_fiscal)
-        if amortissement > amorti_possible:
+        if amortissement_total > amorti_possible:
             amortissement_utilise = amorti_possible
-            deficit_reportable += amortissement - amorti_possible
+            deficit_reportable += amortissement_total - amorti_possible
         else:
-            amortissement_utilise = amortissement
+            amortissement_utilise = amortissement_total
 
         resultat_fiscal -= amortissement_utilise
 
@@ -160,7 +182,6 @@ if regime_fiscal == "LMNP réel":
 
     tableau_rentabilite = pd.DataFrame(tableau_renta)
     st.dataframe(tableau_rentabilite, use_container_width=True)
-
 else:
     st.warning(f"⚠️ Le calcul pour le régime {regime_fiscal} n'est pas encore implémenté.")
 
