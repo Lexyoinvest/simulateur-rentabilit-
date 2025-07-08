@@ -19,15 +19,14 @@ regime_fiscal = st.sidebar.selectbox("Régime fiscal", [
 
 # --- Saisie des données principales ---
 st.header("1. Informations sur le bien")
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
     prix_bien = st.number_input("Prix du bien (€)", min_value=0.0, step=1000.0)
 with col2:
     travaux = st.number_input("Montant des travaux (€)", min_value=0.0, step=1000.0)
-with col3:
-    frais_tiers = st.number_input("Frais pris en charge par des tiers (ex. courtier) (€)", min_value=0.0, step=100.0)
-
+    
+frais_tiers = st.number_input("Frais pris par des tiers (€)", min_value=0.0, step=100.0)
 frais_agence = st.number_input("Frais d’agence (€)", min_value=0.0, step=100.0)
 frais_dossier = st.number_input("Frais de dossier bancaire (€)", min_value=0.0, step=100.0)
 caution = st.number_input("Caution bancaire (€)", min_value=0.0, step=100.0)
@@ -94,6 +93,7 @@ if regime_fiscal == "LMNP réel":
 
     duree_amort_bat = st.number_input("Durée amortissement bâtiment (ans)", min_value=1, value=30)
     duree_amort_travaux = st.number_input("Durée amortissement travaux (ans)", min_value=1, value=10)
+    mobilier = st.number_input("Achat mobilier (€)", min_value=0.0, step=100.0)
     duree_amort_mobilier = st.number_input("Durée amortissement mobilier (ans)", min_value=1, value=7)
     duree_amort_agence = st.number_input("Durée amortissement frais d'agence (ans)", min_value=1, value=5)
     duree_amort_dossier = st.number_input("Durée amortissement frais de dossier (ans)", min_value=1, value=5)
