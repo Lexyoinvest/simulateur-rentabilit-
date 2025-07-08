@@ -22,41 +22,38 @@ st.header("1. Informations sur le bien")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    prix_bien = st.number_input("Prix du bien (€)", min_value=0.0, value=100000.0, step=1000.0)
+    prix_bien = st.number_input("Prix du bien (€)", min_value=0.0, step=1000.0)
 with col2:
-    travaux = st.number_input("Montant des travaux (€)", min_value=0.0, value=20000.0, step=1000.0)
+    travaux = st.number_input("Montant des travaux (€)", min_value=0.0, step=1000.0)
 with col3:
-    frais_annexes = st.number_input("Frais annexes (€)", min_value=0.0, value=3000.0, step=100.0)
+    frais_tiers = st.number_input("Frais pris en charge par des tiers (€)", min_value=0.0, step=100.0)
 
-frais_agence = st.number_input("Frais d’agence (€)", min_value=0.0, value=5000.0, step=100.0)
-frais_dossier = st.number_input("Frais de dossier bancaire (€)", min_value=0.0, value=1000.0, step=100.0)
-caution = st.number_input("Caution bancaire (€)", min_value=0.0, value=2000.0, step=100.0)
+frais_agence = st.number_input("Frais d’agence (€)", min_value=0.0, step=100.0)
+frais_dossier = st.number_input("Frais de dossier bancaire (€)", min_value=0.0, step=100.0)
+caution = st.number_input("Caution bancaire (€)", min_value=0.0, step=100.0)
 
-apport = st.number_input("Apport personnel (€)", min_value=0.0, value=20000.0, step=1000.0)
+apport = st.number_input("Apport personnel (€)", min_value=0.0, step=1000.0)
 frais_notaire = round(0.08 * prix_bien)
 st.write(f"**Frais de notaire estimés :** {frais_notaire} €")
 
-montant_emprunt = prix_bien + travaux + frais_annexes + frais_agence + frais_dossier + caution + frais_notaire - apport
+montant_emprunt = prix_bien + travaux + frais_agence + frais_dossier + caution + frais_notaire - apport - frais_tiers
 st.write(f"**Montant total emprunté :** {montant_emprunt} €")
 
 # --- Paramètres du prêt ---
 st.header("2. Paramètres du prêt")
-duree = st.number_input("Durée du prêt (années)", min_value=1, max_value=40, value=20, step=1)
-taux = st.number_input("Taux d'intérêt (%)", min_value=0.0, max_value=10.0, value=2.0, step=0.1) / 100
-taux_assurance = st.number_input("Taux assurance (%)", min_value=0.0, max_value=2.0, value=0.36, step=0.01) / 100
+duree = st.number_input("Durée du prêt (années)", min_value=1, step=1)
+taux = st.number_input("Taux d'intérêt (%)", min_value=0.0, step=0.1) / 100
+taux_assurance = st.number_input("Taux assurance (%)", min_value=0.0, step=0.01) / 100
 
-if duree > 0 and taux >= 0:
-    n_mois = int(duree * 12)
-    taux_mensuel = taux / 12
-    assurance_mensuelle = montant_emprunt * taux_assurance / 12
+n_mois = int(duree * 12)
+taux_mensuel = taux / 12
+assurance_mensuelle = montant_emprunt * taux_assurance / 12
 
-    mensualite_hors_assurance = montant_emprunt * taux_mensuel / (1 - (1 + taux_mensuel) ** -n_mois)
-    mensualite_totale = mensualite_hors_assurance + assurance_mensuelle
+mensualite_hors_assurance = montant_emprunt * taux_mensuel / (1 - (1 + taux_mensuel) ** -n_mois)
+mensualite_totale = mensualite_hors_assurance + assurance_mensuelle
 
-    st.write(f"**Mensualité hors assurance :** {mensualite_hors_assurance:.2f} €")
-    st.write(f"**Mensualité avec assurance :** {mensualite_totale:.2f} €")
-else:
-    st.warning("Veuillez saisir une durée et un taux d’intérêt valides.")
+st.write(f"**Mensualité hors assurance :** {mensualite_hors_assurance:.2f} €")
+st.write(f"**Mensualité avec assurance :** {mensualite_totale:.2f} €")
 
 # --- Tableau d'amortissement ---
 st.header("3. Tableau d'amortissement")
@@ -92,10 +89,21 @@ st.dataframe(tableau_amortissement, use_container_width=True)
 
 # --- Rentabilité sur 10 ans ---
 st.header("4. Rentabilité sur 10 ans")
-loyer_mensuel = st.number_input("Loyer mensuel brut (€)", min_value=0.0, value=800.0, step=10.0)
+loyer_mensuel = st.number_input("Loyer mensuel brut (€)", min_value=0.0, step=10.0)
 revenu_annuel = loyer_mensuel * 12
-tf = st.number_input("Taxe foncière annuelle (€)", min_value=0.0, value=1200.0, step=100.0)
-charges = st.number_input("Charges non récupérables annuelles (€)", min_value=0.0, value=1000.0, step=100.0)
+tf = st.number_input("Taxe foncière annuelle (€)", min_value=0.0, step=100.0)
+
+# Charges diverses
+total_charges = 0
+charges_copro = st.number_input("Charges de copropriété annuelles (€)", min_value=0.0, step=100.0)
+comptabilite = st.number_input("Frais de comptabilité annuels (€)", min_value=0.0, step=100.0)
+assurance_pno = st.number_input("Assurance PNO annuelle (€)", min_value=0.0, step=100.0)
+assurance_gli = st.number_input("Assurance GLI annuelle (€)", min_value=0.0, step=100.0)
+entretien = st.number_input("Frais d'entretien annuels (€)", min_value=0.0, step=100.0)
+frais_bancaires = st.number_input("Frais bancaires annuels (€)", min_value=0.0, step=100.0)
+frais_agence_location = st.number_input("Frais de gestion locative annuels (€)", min_value=0.0, step=100.0)
+
+charges_total_annuelles = sum([charges_copro, comptabilite, assurance_pno, assurance_gli, entretien, frais_bancaires, frais_agence_location])
 
 # Placeholder : traitement fiscal simplifié uniquement LMNP réel pour l’instant
 if regime_fiscal == "LMNP réel":
@@ -107,7 +115,7 @@ if regime_fiscal == "LMNP réel":
         assurance_annuelle = tableau_amortissement["Assurance"][(annee - 1) * 12:annee * 12].sum()
         amortissement = (prix_bien - 0.2 * prix_bien) / 30
 
-        resultat_fiscal = revenu_annuel - interets_annuels - assurance_annuelle - tf - charges
+        resultat_fiscal = revenu_annuel - interets_annuels - assurance_annuelle - tf - charges_total_annuelles
 
         amorti_possible = max(0, resultat_fiscal)
         if amortissement > amorti_possible:
@@ -132,19 +140,21 @@ if regime_fiscal == "LMNP réel":
 
         impot_ir = resultat_fiscal * 0.3
         ps = resultat_fiscal * 0.172
-        cashflow = revenu_annuel - mensualite_totale * 12 - tf - charges - impot_ir - ps
+
+        cashflow_mensuel = (revenu_annuel - mensualite_totale * 12 - tf - charges_total_annuelles - impot_ir - ps) / 12
 
         tableau_renta.append({
             "Année": annee,
             "Résultat fiscal": round(resultat_fiscal, 2),
             "IR": round(impot_ir, 2),
             "Prélèvements sociaux": round(ps, 2),
-            "Cashflow net": round(cashflow, 2),
+            "Cashflow net mensuel": round(cashflow_mensuel, 2),
             "Déficit reportable": round(deficit_reportable, 2)
         })
 
     tableau_rentabilite = pd.DataFrame(tableau_renta)
     st.dataframe(tableau_rentabilite, use_container_width=True)
+
 else:
     st.warning(f"⚠️ Le calcul pour le régime {regime_fiscal} n'est pas encore implémenté.")
 
