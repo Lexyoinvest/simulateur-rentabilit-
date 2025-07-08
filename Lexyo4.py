@@ -26,7 +26,7 @@ with col1:
 with col2:
     travaux = st.number_input("Montant des travaux (€)", min_value=0.0, step=1000.0)
 with col3:
-    frais_tiers = st.number_input("Frais pris en charge par des tiers (€)", min_value=0.0, step=100.0)
+    frais_tiers = st.number_input("Frais pris en charge par des tiers (ex. courtier) (€)", min_value=0.0, step=100.0)
 
 frais_agence = st.number_input("Frais d’agence (€)", min_value=0.0, step=100.0)
 frais_dossier = st.number_input("Frais de dossier bancaire (€)", min_value=0.0, step=100.0)
@@ -37,7 +37,7 @@ apport = st.number_input("Apport personnel (€)", min_value=0.0, step=1000.0)
 frais_notaire = round(0.08 * prix_bien)
 st.write(f"**Frais de notaire estimés :** {frais_notaire} €")
 
-montant_emprunt = prix_bien + travaux + frais_agence + frais_dossier + caution + frais_notaire + frais_tiers - apport
+montant_emprunt = prix_bien + travaux + frais_agence + frais_dossier + caution + frais_notaire + frais_tiers - apport 
 st.write(f"**Montant total emprunté :** {montant_emprunt} €")
 
 # --- Paramètres du prêt ---
@@ -91,23 +91,30 @@ st.dataframe(tableau_amortissement, use_container_width=True)
 # --- Amortissements LMNP réel ---
 if regime_fiscal == "LMNP réel":
     st.header("4. Détails des amortissements")
+
+    duree_amort_bat = st.number_input("Durée amortissement bâtiment (ans)", min_value=1, value=30)
+    duree_amort_travaux = st.number_input("Durée amortissement travaux (ans)", min_value=1, value=10)
+    duree_amort_mobilier = st.number_input("Durée amortissement mobilier (ans)", min_value=1, value=7)
+    duree_amort_agence = st.number_input("Durée amortissement frais d'agence (ans)", min_value=1, value=5)
+    duree_amort_dossier = st.number_input("Durée amortissement frais de dossier (ans)", min_value=1, value=5)
+
     valeur_terrain = 0.2 * prix_bien
     valeur_batiment = prix_bien - valeur_terrain
-    amortissement_batiment = valeur_batiment / 30
-    amortissement_travaux = travaux / 10
-    amortissement_mobilier = mobilier / 7
-    amortissement_agence = frais_agence / 5
-    amortissement_dossier = frais_dossier / 5
+
+    amortissement_batiment = valeur_batiment / duree_amort_bat
+    amortissement_travaux = travaux / duree_amort_travaux
+    amortissement_mobilier = mobilier / duree_amort_mobilier
+    amortissement_agence = frais_agence / duree_amort_agence
+    amortissement_dossier = frais_dossier / duree_amort_dossier
 
     st.markdown(f"""
     **Amortissements annuels estimés :**
-    - Bâtiment (30 ans) : {amortissement_batiment:.2f} €
-    - Travaux (10 ans) : {amortissement_travaux:.2f} €
-    - Mobilier (7 ans) : {amortissement_mobilier:.2f} €
-    - Frais d'agence (5 ans) : {amortissement_agence:.2f} €
-    - Frais de dossier (5 ans) : {amortissement_dossier:.2f} €
+    - Bâtiment ({duree_amort_bat} ans) : {amortissement_batiment:.2f} €
+    - Travaux ({duree_amort_travaux} ans) : {amortissement_travaux:.2f} €
+    - Mobilier ({duree_amort_mobilier} ans) : {amortissement_mobilier:.2f} €
+    - Frais d'agence ({duree_amort_agence} ans) : {amortissement_agence:.2f} €
+    - Frais de dossier ({duree_amort_dossier} ans) : {amortissement_dossier:.2f} €
     """)
-
 # --- Rentabilité sur 10 ans ---
 st.header("5. Rentabilité sur 10 ans")
 loyer_mensuel = st.number_input("Loyer mensuel brut (€)", min_value=0.0, step=10.0)
