@@ -36,7 +36,7 @@ apport = st.number_input("Apport personnel (€)", min_value=0.0, step=1000.0)
 frais_notaire = round(0.08 * prix_bien)
 st.write(f"**Frais de notaire estimés :** {frais_notaire} €")
 
-montant_emprunt = prix_bien + travaux + frais_agence + frais_dossier + caution + frais_notaire - apport - frais_tiers
+montant_emprunt = prix_bien + travaux + frais_agence + frais_dossier + caution + frais_notaire + frais_tiers - apport
 st.write(f"**Montant total emprunté :** {montant_emprunt} €")
 
 # --- Paramètres du prêt ---
