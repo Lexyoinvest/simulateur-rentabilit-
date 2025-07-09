@@ -116,6 +116,15 @@ if regime_fiscal == "LMNP réel":
     - Frais d'agence : {amortissement_agence:.2f} €
     - Frais de dossier : {amortissement_dossier:.2f} €
     """)
+# Saisie des revenus et charges
+st.header("5. Revenus et Charges")
+
+revenu_annuel = st.number_input("Revenu locatif annuel (€)", min_value=0.0, step=100.0)
+tf = st.number_input("Taxe foncière annuelle (€)", min_value=0.0, step=100.0)
+charges_total_annuelles = st.number_input("Charges non récupérables annuelles (€)", min_value=0.0, step=100.0)
+
+taux_ir = st.number_input("Taux marginal d'imposition (IR, %)", min_value=0.0, max_value=100.0, value=30.0) / 100
+taux_ps = st.number_input("Taux des prélèvements sociaux (%)", min_value=0.0, max_value=100.0, value=17.2) / 100
 
     # Calcul rentabilité 10 ans avec amortissements et déficit reportable
     deficit_reportable = 0
