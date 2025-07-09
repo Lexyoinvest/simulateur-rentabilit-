@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 st.set_page_config(page_title="Simulateur de Rentabilité Immobilière", layout="wide")
-st.title("Lexyo le Simulateur de Rentabilité Immobilière")
+st.title("Simulateur de Rentabilité Immobilière")
 
 # --- Sélection du régime fiscal ---
 st.sidebar.header("Choix du régime fiscal")
@@ -32,8 +32,6 @@ frais_dossier = st.number_input("Frais de dossier bancaire (€)", min_value=0.0
 caution = st.number_input("Caution bancaire (€)", min_value=0.0, step=100.0)
 mobilier = st.number_input("Valeur du mobilier (€)", min_value=0.0, step=100.0)
 
-duree_amort_mobilier = st.number_input("Durée d'amortissement du mobilier (ans)", min_value=1, value=7)
-
 apport = st.number_input("Apport personnel (€)", min_value=0.0, step=1000.0)
 frais_notaire = round(0.08 * prix_bien)
 st.write(f"**Frais de notaire estimés :** {frais_notaire} €")
@@ -56,7 +54,6 @@ mensualite_totale = mensualite_hors_assurance + assurance_mensuelle
 
 st.write(f"**Mensualité hors assurance :** {mensualite_hors_assurance:.2f} €")
 st.write(f"**Mensualité avec assurance :** {mensualite_totale:.2f} €")
-
 
 # --- Tableau d'amortissement ---
 st.header("3. Tableau d'amortissement")
@@ -96,6 +93,8 @@ if regime_fiscal == "LMNP réel":
 
     duree_amort_bat = st.number_input("Durée amortissement bâtiment (ans)", min_value=1, value=30)
     duree_amort_travaux = st.number_input("Durée amortissement travaux (ans)", min_value=1, value=10)
+    mobilier = st.number_input("Achat mobilier (€)", min_value=0.0, step=100.0)
+    duree_amort_mobilier = st.number_input("Durée amortissement mobilier (ans)", min_value=1, value=7)
     duree_amort_agence = st.number_input("Durée amortissement frais d'agence (ans)", min_value=1, value=5)
     duree_amort_dossier = st.number_input("Durée amortissement frais de dossier (ans)", min_value=1, value=5)
 
@@ -103,41 +102,46 @@ if regime_fiscal == "LMNP réel":
     valeur_batiment = prix_bien - valeur_terrain
 
     amortissement_batiment = valeur_batiment / duree_amort_bat
-    amortissement_travaux = travaux / duree_amort_travaux if duree_amort_travaux > 0 else 0
-    amortissement_mobilier = mobilier / duree_amort_mobilier if duree_amort_mobilier > 0 else 0
-    amortissement_agence = frais_agence / duree_amort_agence if duree_amort_agence > 0 else 0
-    amortissement_dossier = frais_dossier / duree_amort_dossier if duree_amort_dossier > 0 else 0
+    amortissement_travaux = travaux / duree_amort_travaux
+    amortissement_mobilier = mobilier / duree_amort_mobilier
+    amortissement_agence = frais_agence / duree_amort_agence
+    amortissement_dossier = frais_dossier / duree_amort_dossier
 
     st.markdown(f"""
     **Amortissements annuels estimés :**
     - Bâtiment : {amortissement_batiment:.2f} €
     - Travaux : {amortissement_travaux:.2f} €
     - Mobilier : {amortissement_mobilier:.2f} €
-    - Frais d'agence : {amortissement_agence:.2f} €
     - Frais de dossier : {amortissement_dossier:.2f} €
     """)
-# Saisie des revenus et charges
-st.header("5. Revenus et Charges")
-
-revenu_annuel = st.number_input("Revenu locatif annuel (€)", min_value=0.0, step=100.0)
+# --- Rentabilité sur 10 ans ---
+st.header("5. Rentabilité sur 10 ans")
+loyer_mensuel = st.number_input("Loyer mensuel brut (€)", min_value=0.0, step=10.0)
+revenu_annuel = loyer_mensuel * 12
 tf = st.number_input("Taxe foncière annuelle (€)", min_value=0.0, step=100.0)
-charges_total_annuelles = st.number_input("Charges non récupérables annuelles (€)", min_value=0.0, step=100.0)
 
-taux_ir = st.number_input("Taux marginal d'imposition (IR, %)", min_value=0.0, max_value=100.0, value=30.0) / 100
-taux_ps = st.number_input("Taux des prélèvements sociaux (%)", min_value=0.0, max_value=100.0, value=17.2) / 100
+# Charges diverses
+charges_copro = st.number_input("Charges de copropriété annuelles (€)", min_value=0.0, step=100.0)
+comptabilite = st.number_input("Frais de comptabilité annuels (€)", min_value=0.0, step=100.0)
+assurance_pno = st.number_input("Assurance PNO annuelle (€)", min_value=0.0, step=100.0)
+assurance_gli = st.number_input("Assurance GLI annuelle (€)", min_value=0.0, step=100.0)
+entretien = st.number_input("Frais d'entretien annuels (€)", min_value=0.0, step=100.0)
+frais_bancaires = st.number_input("Frais bancaires annuels (€)", min_value=0.0, step=100.0)
+frais_agence_location = st.number_input("Frais de gestion locative annuels (€)", min_value=0.0, step=100.0)
 
-    # Calcul rentabilité 10 ans avec amortissements et déficit reportable
+charges_total_annuelles = sum([charges_copro, comptabilite, assurance_pno, assurance_gli, entretien, frais_bancaires, frais_agence_location])
+
+# Choix du TMI et des prélèvements sociaux
+col_ir, col_ps = st.columns(2)
+with col_ir:
+    taux_ir = st.number_input("Taux marginal d'imposition (IR) %", min_value=0.0, max_value=100.0, value=30.0, step=0.1) / 100
+with col_ps:
+    taux_ps = st.number_input("Taux des prélèvements sociaux %", min_value=0.0, max_value=100.0, value=17.2, step=0.1) / 100
+
+# Placeholder : traitement fiscal simplifié uniquement LMNP réel pour l’instant
+if regime_fiscal == "LMNP réel":
     deficit_reportable = 0
     tableau_renta = []
-# --- Ajout des entrées manquantes ---
-st.header("5. Revenus et Charges")
-
-revenu_annuel = st.number_input("Revenu locatif annuel (€)", min_value=0.0, step=100.0)
-tf = st.number_input("Taxe foncière annuelle (€)", min_value=0.0, step=100.0)
-charges_total_annuelles = st.number_input("Charges non récupérables annuelles (€)", min_value=0.0, step=100.0)
-
-taux_ir = st.number_input("Taux marginal d'imposition (IR, %)", min_value=0.0, max_value=100.0, value=30.0) / 100
-taux_ps = st.number_input("Taux des prélèvements sociaux (%)", min_value=0.0, max_value=100.0, value=17.2) / 100
 
     for annee in range(1, 11):
         interets_annuels = tableau_amortissement["Intérêts"][(annee - 1) * 12:annee * 12].sum()
@@ -145,25 +149,28 @@ taux_ps = st.number_input("Taux des prélèvements sociaux (%)", min_value=0.0, 
 
         amortissement_total = amortissement_batiment + amortissement_travaux + amortissement_mobilier + amortissement_agence + amortissement_dossier
 
-        # Résultat fiscal avant amortissement
         resultat_fiscal = revenu_annuel - interets_annuels - assurance_annuelle - tf - charges_total_annuelles
 
-        # Amortissement déductible limité au résultat fiscal positif
-        amortissement_utilise = min(amortissement_total, max(resultat_fiscal, 0))
+        amorti_possible = max(0, resultat_fiscal)
+        if amortissement_total > amorti_possible:
+            amortissement_utilise = amorti_possible
+            deficit_reportable += amortissement_total - amorti_possible
+        else:
+            amortissement_utilise = amortissement_total
 
-        # On retranche l’amortissement utilisé au résultat fiscal
         resultat_fiscal -= amortissement_utilise
 
-        # Gestion déficit reportable LMNP réel
         if resultat_fiscal < 0:
             deficit_reportable += abs(resultat_fiscal)
             resultat_fiscal = 0
         else:
-            # On utilise le déficit reportable si possible
             if deficit_reportable > 0:
-                utilisation_deficit = min(deficit_reportable, resultat_fiscal)
-                resultat_fiscal -= utilisation_deficit
-                deficit_reportable -= utilisation_deficit
+                if resultat_fiscal > deficit_reportable:
+                    resultat_fiscal -= deficit_reportable
+                    deficit_reportable = 0
+                else:
+                    deficit_reportable -= resultat_fiscal
+                    resultat_fiscal = 0
 
         impot_ir = resultat_fiscal * taux_ir
         ps = resultat_fiscal * taux_ps
@@ -181,7 +188,6 @@ taux_ps = st.number_input("Taux des prélèvements sociaux (%)", min_value=0.0, 
 
     tableau_rentabilite = pd.DataFrame(tableau_renta)
     st.dataframe(tableau_rentabilite, use_container_width=True)
-
 else:
     st.warning(f"⚠️ Le calcul pour le régime {regime_fiscal} n'est pas encore implémenté.")
 
