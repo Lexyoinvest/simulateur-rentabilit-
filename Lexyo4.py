@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 st.set_page_config(page_title="Simulateur de Rentabilité Immobilière", layout="wide")
-st.title("Simulateur de Rentabilité Immobilière")
+st.title("Lexyo le Simulateur de Rentabilité Immobilière")
 
 # --- Sélection du régime fiscal ---
 st.sidebar.header("Choix du régime fiscal")
