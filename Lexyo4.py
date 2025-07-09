@@ -32,6 +32,8 @@ frais_dossier = st.number_input("Frais de dossier bancaire (€)", min_value=0.0
 caution = st.number_input("Caution bancaire (€)", min_value=0.0, step=100.0)
 mobilier = st.number_input("Valeur du mobilier (€)", min_value=0.0, step=100.0)
 
+duree_amort_mobilier = st.number_input("Durée d'amortissement du mobilier (ans)", min_value=1, value=7)
+
 apport = st.number_input("Apport personnel (€)", min_value=0.0, step=1000.0)
 frais_notaire = round(0.08 * prix_bien)
 st.write(f"**Frais de notaire estimés :** {frais_notaire} €")
@@ -54,6 +56,7 @@ mensualite_totale = mensualite_hors_assurance + assurance_mensuelle
 
 st.write(f"**Mensualité hors assurance :** {mensualite_hors_assurance:.2f} €")
 st.write(f"**Mensualité avec assurance :** {mensualite_totale:.2f} €")
+
 
 # --- Tableau d'amortissement ---
 st.header("3. Tableau d'amortissement")
@@ -93,8 +96,6 @@ if regime_fiscal == "LMNP réel":
 
     duree_amort_bat = st.number_input("Durée amortissement bâtiment (ans)", min_value=1, value=30)
     duree_amort_travaux = st.number_input("Durée amortissement travaux (ans)", min_value=1, value=10)
-    mobilier = st.number_input("Achat mobilier (€)", min_value=0.0, step=100.0)
-    duree_amort_mobilier = st.number_input("Durée amortissement mobilier (ans)", min_value=1, value=7)
     duree_amort_agence = st.number_input("Durée amortissement frais d'agence (ans)", min_value=1, value=5)
     duree_amort_dossier = st.number_input("Durée amortissement frais de dossier (ans)", min_value=1, value=5)
 
@@ -112,8 +113,10 @@ if regime_fiscal == "LMNP réel":
     - Bâtiment : {amortissement_batiment:.2f} €
     - Travaux : {amortissement_travaux:.2f} €
     - Mobilier : {amortissement_mobilier:.2f} €
+    - Frais d'agence : {amortissement_agence:.2f} €
     - Frais de dossier : {amortissement_dossier:.2f} €
     """)
+
 # --- Rentabilité sur 10 ans ---
 st.header("5. Rentabilité sur 10 ans")
 loyer_mensuel = st.number_input("Loyer mensuel brut (€)", min_value=0.0, step=10.0)
