@@ -1,139 +1,123 @@
-# Chargement initial : on va créer un squelette de code qui englobe toutes les subtilités fiscales manquantes
-# pour différents régimes immobiliers. Il ne s'agit pas encore d'un code front-end, mais du moteur fiscal Python.
+# Module LMNP réel pour CleanPro
+# Codé en Python, prêt à brancher
 
 from dataclasses import dataclass
-from typing import Optional
-
+import numpy as np
+import pandas as pd
 
 @dataclass
-class SimulationInputs:
-    regime: str
+class InputsLMNPReel:
     prix_bien: float
-    montant_apport: float
-    frais_notaire: float
-    frais_agence: float
+    apport: float
     travaux: float
-    mobilier: float
+    frais_agence: float
     frais_dossier: float
-    caution: float
     frais_tiers: float
+    mobilier: float
+    frais_garantie: float
+    duree: int
+    differe: int
+    taux_credit: float
+    taux_assurance: float
     charges_copro: float
-    assurance_pno: float
+    assurance_habitation: float
     assurance_gli: float
     taxe_fonciere: float
-    frais_entretien: float
-    frais_gestion: float
-    frais_bancaire: float
+    entretien: float
     comptabilite: float
-    loyer_mensuel_hc: float
-    loyer_mensuel_cc: float
-    amortissement_bien_duree: Optional[int]
-    amortissement_notaire_duree: Optional[int]
-    amortissement_mobilier_duree: Optional[int]
-    amortissement_travaux_duree: Optional[int]
-    taux_interet: float
-    taux_assurance: float
-    revenu_annuel_global: float
-    nombre_parts: float
+    frais_bancaires: float
+    loyer_hc: float
+    vacance_locative: float
+    tmi: float
 
+class LMNPReel:
+    def __init__(self, inputs: InputsLMNPReel):
+        self.i = inputs
+        self.resultats = {}
+        self.calculs_intermediaires()
+        self.genere_tableau_projection()
 
-def calcul_tmi(revenu_imposable, parts):
-    # Barème 2025
-    tranches = [
-        (0, 11294, 0.0),
-        (11295, 28797, 0.11),
-        (28798, 82341, 0.30),
-        (82342, 177106, 0.41),
-        (177107, float('inf'), 0.45),
-    ]
-    quotient = revenu_imposable / parts
-    for bas, haut, taux in tranches:
-        if bas <= quotient <= haut:
-            return taux
-    return 0.30
+    def calculs_intermediaires(self):
+        self.frais_notaire = 0.08 * self.i.prix_bien
+        self.total_frais = sum([
+            self.frais_notaire,
+            self.i.frais_agence,
+            self.i.frais_dossier,
+            self.i.travaux,
+            self.i.frais_tiers,
+            self.i.mobilier,
+            self.i.frais_garantie
+        ])
+        self.montant_emprunt = self.i.prix_bien + self.total_frais - self.i.apport
+        self.taux_mensuel = self.i.taux_credit / 12
+        self.assurance_mensuelle = self.i.taux_assurance / 12 * self.montant_emprunt
 
-
-def calcul_impot_ir(revenu_foncier_net, inputs: SimulationInputs):
-    revenu_total = inputs.revenu_annuel_global + revenu_foncier_net
-    tmi = calcul_tmi(revenu_total, inputs.nombre_parts)
-    prelevements_sociaux = 0.172
-    if revenu_foncier_net < 0:
-        return 0
-    return revenu_foncier_net * (tmi + prelevements_sociaux)
-
-
-def calcul_impot_is(benefice):
-    if benefice <= 42500:
-        return benefice * 0.15
-    return 42500 * 0.15 + (benefice - 42500) * 0.25
-
-
-def calcul_amortissement(prix, duree):
-    return prix / duree if duree and duree > 0 else 0
-
-
-def simulate(inputs: SimulationInputs):
-    loyer_annuel = inputs.loyer_mensuel_hc * 12
-
-    charges = sum([
-        inputs.charges_copro,
-        inputs.assurance_pno,
-        inputs.assurance_gli,
-        inputs.taxe_fonciere,
-        inputs.frais_entretien,
-        inputs.frais_gestion,
-        inputs.frais_bancaire,
-        inputs.comptabilite
-    ])
-
-    charges_annuelles = charges
-
-    interets_emprunt = (inputs.prix_bien - inputs.montant_apport) * inputs.taux_interet
-    assurance_credit = (inputs.prix_bien - inputs.montant_apport) * inputs.taux_assurance
-
-    total_amortissements = 0
-    if inputs.regime in ["LMNP réel", "LMP réel", "SCI à l'IS", "SARL de famille", "Holding à l'IS"]:
-        # Attention : terrain non amortissable → on retire 20% du prix
-        amort_bien = calcul_amortissement(inputs.prix_bien * 0.8, inputs.amortissement_bien_duree)
-        amort_notaire = calcul_amortissement(inputs.frais_notaire, inputs.amortissement_notaire_duree)
-        amort_mobilier = calcul_amortissement(inputs.mobilier, inputs.amortissement_mobilier_duree)
-        amort_travaux = calcul_amortissement(inputs.travaux, inputs.amortissement_travaux_duree)
-        total_amortissements = amort_bien + amort_notaire + amort_mobilier + amort_travaux
-
-    revenu_net = loyer_annuel - charges_annuelles - interets_emprunt - assurance_credit
-
-    if inputs.regime == "Micro BIC":
-        revenu_imposable = loyer_annuel * 0.5
-        impot = calcul_impot_ir(revenu_imposable, inputs)
-        return {"impot": impot, "cashflow": revenu_net - impot}
-
-    elif inputs.regime == "Micro foncier":
-        revenu_imposable = loyer_annuel * 0.7
-        impot = calcul_impot_ir(revenu_imposable, inputs)
-        return {"impot": impot, "cashflow": revenu_net - impot}
-
-    elif inputs.regime in ["LMNP réel", "LMP réel", "SARL de famille"]:
-        revenu_net_bic = revenu_net - total_amortissements
-        if revenu_net_bic < 0:
-            impot = 0  # déficit non imposé
+        if self.i.differe > 0:
+            self.mensualite = np.pmt(self.taux_mensuel, self.i.duree * 12 - self.i.differe, -self.montant_emprunt)
         else:
-            impot = calcul_impot_ir(revenu_net_bic, inputs)
-        return {"impot": impot, "cashflow": revenu_net - impot}
+            self.mensualite = np.pmt(self.taux_mensuel, self.i.duree * 12, -self.montant_emprunt)
 
-    elif inputs.regime == "Location nue réel" or inputs.regime == "SCI à l'IR":
-        revenu_foncier = revenu_net
-        if revenu_foncier < -10700:
-            revenu_foncier = -10700  # plafond du déficit imputable
-        impot = calcul_impot_ir(revenu_foncier, inputs)
-        return {"impot": impot, "cashflow": revenu_net - impot}
+    def genere_tableau_projection(self):
+        duree = 10
+        tableau = []
+        capital_restant = self.montant_emprunt
+        amortissement_bien = (self.i.prix_bien - self.frais_notaire) / 30
+        amortissement_mobilier = self.i.mobilier / 7
 
-    elif inputs.regime in ["SCI à l'IS", "Holding à l'IS"]:
-        benefice = revenu_net - total_amortissements
-        if benefice < 0:
-            impot = 0
-        else:
-            impot = calcul_impot_is(benefice)
-        return {"impot": impot, "cashflow": revenu_net - impot}
+        for annee in range(1, duree + 1):
+            interets_annuels = 0
+            capital_rembourse_annuel = 0
+            mensualites = []
 
-    else:
-        raise ValueError("Régime inconnu")
+            for mois in range(1, 13):
+                idx = (annee - 1) * 12 + mois
+                if idx <= self.i.differe:
+                    interets = capital_restant * self.taux_mensuel
+                    capital_rembourse = 0
+                else:
+                    interets = capital_restant * self.taux_mensuel
+                    capital_rembourse = self.mensualite - interets
+                    capital_restant -= capital_rembourse
+
+                interets_annuels += interets
+                capital_rembourse_annuel += capital_rembourse
+                mensualites.append(self.mensualite + self.assurance_mensuelle)
+
+            loyer_annualise = self.i.loyer_hc * (12 - self.i.vacance_locative)
+            charges = sum([
+                self.i.charges_copro,
+                self.i.assurance_habitation,
+                self.i.assurance_gli,
+                self.i.taxe_fonciere,
+                self.i.entretien,
+                self.i.comptabilite,
+                self.i.frais_bancaires
+            ])
+            amortissements = amortissement_bien + amortissement_mobilier
+            resultat_net = loyer_annualise - interets_annuels - charges - amortissements
+
+            if resultat_net > 0:
+                impot = resultat_net * self.i.tmi
+                deficit = 0
+            else:
+                impot = 0
+                deficit = resultat_net
+
+            cashflow = loyer_annualise - charges - interets_annuels - sum(mensualites)
+
+            tableau.append({
+                "Année": annee,
+                "Loyer": round(loyer_annualise),
+                "Charges": round(charges),
+                "Intérêts": round(interets_annuels),
+                "Amortissements": round(amortissements),
+                "Résultat Net": round(resultat_net),
+                "Impôt": round(impot),
+                "Déficit": round(deficit),
+                "Cashflow": round(cashflow)
+            })
+
+        self.df = pd.DataFrame(tableau)
+
+    def get_projection(self):
+        return self.df
