@@ -121,3 +121,33 @@ class LMNPReel:
 
     def get_projection(self):
         return self.df
+
+# Exemple d'utilisation
+if __name__ == "__main__":
+    inputs = InputsLMNPReel(
+        prix_bien=200000,
+        apport=20000,
+        travaux=10000,
+        frais_agence=5000,
+        frais_dossier=1000,
+        frais_tiers=1000,
+        mobilier=5000,
+        frais_garantie=1500,
+        duree=20,
+        differe=6,
+        taux_credit=0.03,
+        taux_assurance=0.003,
+        charges_copro=1000,
+        assurance_habitation=300,
+        assurance_gli=400,
+        taxe_fonciere=1200,
+        entretien=500,
+        comptabilite=700,
+        frais_bancaires=200,
+        loyer_hc=1000,
+        vacance_locative=1,
+        tmi=0.30
+    )
+
+    lmnp = LMNPReel(inputs)
+    print(lmnp.get_projection())
