@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from typing import Dict, Any
 
 # --- CONFIGURATION DE L'APPLICATION ---
@@ -77,6 +79,102 @@ calculs = calculs_communs(data)
 # --- BLOC DE CALCUL DYNAMIQUE SELON LE RÉGIME ---
 st.header("📊 Résultats selon le régime fiscal")
 
+if regime == "LMNP Réel":
+    # 👉 Code spécifique LMNP Réel ici
+    pass
+
+elif regime == "SCI à l'IS":
+    st.subheader("📘 Simulation SCI à l'IS")
+
+    frais_agence = st.number_input("Frais d'agence (€)", value=10000)
+    frais_dossier = st.number_input("Frais de dossier bancaire (€)", value=1000)
+    frais_garantie = st.number_input("Frais de garantie bancaire (€)", value=2000)
+    frais_tiers = st.number_input("Frais tiers (courtier, diagnostic, etc.) (€)", value=1500)
+
+    montant_emprunt = prix_bien + prix_bien * frais_notaire / 100 + frais_agence + travaux + frais_dossier + frais_garantie + frais_tiers - apport
+    st.markdown(f"**Montant emprunté :** {montant_emprunt:,.0f} €")
+
+    taux_interet = taux_credit / 100
+    taux_assurance = st.number_input("Taux assurance (%)", value=0.36) / 100
+
+    mensualite = np.pmt(taux_interet / 12, duree_credit * 12, -montant_emprunt)
+    mensualite_assurance = montant_emprunt * taux_assurance / 12
+    total_mensualite = mensualite + mensualite_assurance
+    st.markdown(f"**Mensualité avec assurance :** {total_mensualite:,.2f} €")
+
+    st.markdown("### 📌 Charges annuelles")
+    charges_copro = st.number_input("Charges de copropriété (€ / an)", value=1200)
+    assurance_habitation = st.number_input("Assurance habitation (€ / an)", value=200)
+    gli = st.number_input("Assurance loyer impayé GLI (€ / an)", value=300)
+    taxe_fonciere = st.number_input("Taxe foncière (€ / an)", value=1000)
+    frais_entretien = st.number_input("Frais d'entretien (€ / an)", value=500)
+    comptabilite = st.number_input("Comptabilité (€ / an)", value=900)
+    frais_bancaires = st.number_input("Frais bancaires (€ / an)", value=300)
+
+    charges_annuelles = sum([
+        charges_copro, assurance_habitation, gli,
+        taxe_fonciere, frais_entretien, comptabilite, frais_bancaires
+    ])
+
+    st.markdown("### 📌 Revenu locatif")
+    revenu_annuel = loyer_mensuel * 12
+
+    st.markdown("### 📌 Amortissements")
+    amortissement_bien = st.number_input("Durée amortissement bien (ans)", value=30)
+    amortissement_travaux = st.number_input("Durée amortissement travaux (ans)", value=15)
+    amortissement_frais = st.number_input("Durée amortissement frais (ans)", value=5)
+
+    am_bien = prix_bien / amortissement_bien
+    am_travaux = travaux / amortissement_travaux
+    am_frais = (prix_bien * frais_notaire / 100 + frais_agence + frais_dossier + frais_tiers + frais_garantie) / amortissement_frais
+    amortissement_total_annuel = am_bien + am_travaux + am_frais
+
+    # Projection sur 10 ans
+    resultats = []
+    report_deficit = 0
+
+    for annee in range(1, 11):
+        interets_annuels = np.ipmt(taux_interet / 12, annee * 12, duree_credit * 12, -montant_emprunt) * 12
+        depenses = total_mensualite * 12 + charges_annuelles
+        resultat_fiscal = revenu_annuel - charges_annuelles - interets_annuels - amortissement_total_annuel
+
+        if resultat_fiscal < 0:
+            report_deficit += abs(resultat_fiscal)
+            impot_is = 0
+        else:
+            resultat_fiscal -= min(report_deficit, resultat_fiscal)
+            report_deficit -= min(report_deficit, resultat_fiscal)
+            impot_is = resultat_fiscal * 0.15 if resultat_fiscal < 38120 else 38120 * 0.15 + (resultat_fiscal - 38120) * 0.25
+
+        cashflow = revenu_annuel - depenses - impot_is
+
+        resultats.append({
+            "Année": annee,
+            "Résultat fiscal (€)": resultat_fiscal,
+            "Impôt sur les sociétés (€)": impot_is,
+            "Cashflow net (€)": cashflow
+        })
+
+    resultats_df = pd.DataFrame(resultats)
+    st.dataframe(resultats_df.style.format("{:.0f}"))
+
+    fig, ax = plt.subplots(3, 1, figsize=(8, 10))
+
+    ax[0].plot(resultats_df["Année"], resultats_df["Résultat fiscal (€)"], marker='o', color='orange')
+    ax[0].set_title("Résultat fiscal annuel")
+    ax[0].set_ylabel("€")
+
+    ax[1].plot(resultats_df["Année"], resultats_df["Impôt sur les sociétés (€)"], marker='o', color='red')
+    ax[1].set_title("Impôt sur les sociétés annuel")
+    ax[1].set_ylabel("€")
+
+    ax[2].plot(resultats_df["Année"], resultats_df["Cashflow net (€)"], marker='o', color='green')
+    ax[2].set_title("Cashflow net annuel")
+    ax[2].set_ylabel("€")
+    ax[2].set_xlabel("Année")
+
+    plt.tight_layout()
+    st.pyplot(fig)
 if regime == "LMNP Réel":
     # 👉 Tu colleras ici le code complet du LMNP Réel
     pass
