@@ -1,128 +1,166 @@
-from dataclasses import dataclass
-import numpy as np
+from dataclasses import dataclass, field
+import pandas as pd
 
 @dataclass
-class BienImmobilier:
-    prix: float
-    travaux: float
-    frais_notaire: float
-    frais_agence: float
+class SCIaIS:
+    # Données d'acquisition
+    prix_bien: float
+    part_terrain: float  # en %
+    apport: float
     frais_dossier: float
-    autres_frais: float
-    quote_part_terrain: float = 0.1  # 10 % par défaut non amortissable
+    frais_agence: float
+    montant_travaux: float
+    frais_garantie: float
+    frais_tiers: float
+    mobilier: float
+    frais_notaire_pct: float = 8.0
 
-    def valeur_amortissable(self) -> float:
-        total_hors_terrain = self.prix * (1 - self.quote_part_terrain)
-        return total_hors_terrain + self.travaux
+    # Emprunt
+    duree_annees: int
+    taux_interet: float
+    taux_assurance: float
+    differe_mois: int
 
-    def cout_total(self) -> float:
-        return self.prix + self.travaux + self.frais_notaire + self.frais_agence + self.frais_dossier + self.autres_frais
+    # Charges annuelles
+    charges_copro: float
+    assurance: float
+    taxe_fonciere: float
+    frais_entretien: float
+    frais_compta: float
+    frais_bancaires: float
+    gestion_locative: float = 0.0
 
+    # Revenus
+    loyer_mensuel_hc: float
+    vacance_locative_mois: int
 
-@dataclass
-class Emprunt:
-    montant: float
-    duree: int  # en années
-    taux: float  # annuel en %
-    assurance: float  # annuel en %
-    mensualite: float = None  # peut être fixée à l'avance si connue
-    differe: int = 0  # différé total ou partiel en années
+    # Amortissements
+    duree_amort_bati: int = 30
+    duree_amort_travaux: int = 10
+    duree_amort_mobilier: int = 7
+    duree_amort_frais: int = 5
 
-    def calcul_mensualite(self):
-        if self.mensualite:
-            return self.mensualite
-        taux_mensuel = self.taux / 100 / 12
-        n = self.duree * 12
-        return self.montant * taux_mensuel / (1 - (1 + taux_mensuel) ** -n)
+    taux_is: float = 0.25  # taux d’IS
 
-    def interets_annuels(self, annee):
-        if annee < self.differe:
-            return self.montant * self.taux / 100  # différé total
-        capital_restant = self.montant
-        taux_mensuel = self.taux / 100 / 12
-        mensualite = self.calcul_mensualite()
-        for mois in range(12 * annee):
-            interet = capital_restant * taux_mensuel
-            capital_restant -= (mensualite - interet)
-        return capital_restant * taux_mensuel * 12
+    montant_emprunt: float = field(init=False)
 
-    def assurance_annuelle(self):
-        return self.montant * self.assurance / 100
+    def __post_init__(self):
+        frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
+        total_a_financer = (
+            self.prix_bien + frais_notaire +
+            self.frais_agence + self.frais_dossier +
+            self.frais_garantie + self.frais_tiers +
+            self.montant_travaux
+        )
+        self.montant_emprunt = max(0, total_a_financer - self.apport)
 
+    def mensualite_emprunt(self):
+        taux_mensuel = self.taux_interet / 100 / 12
+        taux_assurance = self.taux_assurance / 100 / 12
+        capital = self.montant_emprunt
 
-@dataclass
-class LoyersEtCharges:
-    loyers_annuels: float
-    charges_annuelles: float
-    croissance_loyers: float = 0.0  # %
-    croissance_charges: float = 0.0  # %
+        capital_differe = capital
+        for _ in range(self.differe_mois):
+            capital_differe += capital_differe * taux_mensuel
 
-    def loyers(self, annee):
-        return self.loyers_annuels * (1 + self.croissance_loyers / 100) ** annee
+        nb_mensualites = self.duree_annees * 12 - self.differe_mois
+        if nb_mensualites <= 0:
+            raise ValueError("Durée ou différé incohérents")
 
-    def charges(self, annee):
-        return self.charges_annuelles * (1 + self.croissance_charges / 100) ** annee
+        mensualite_hors_assurance = capital_differe * taux_mensuel / (1 - (1 + taux_mensuel) ** -nb_mensualites)
+        mensualite_totale = mensualite_hors_assurance + capital * taux_assurance
+        return mensualite_totale
 
+    def tableau_amortissement_emprunt(self):
+        taux_mensuel = self.taux_interet / 100 / 12
+        capital = self.montant_emprunt
+        capital_rest = capital
+        mensualite_hors_assurance = None
+        rows = []
 
-@dataclass
-class Amortissements:
-    bien: BienImmobilier
-    duree_batiment: int = 40
-    duree_travaux: int = 10
-
-    def annuite_bien(self):
-        return (self.bien.prix * (1 - self.bien.quote_part_terrain)) / self.duree_batiment
-
-    def annuite_travaux(self):
-        return self.bien.travaux / self.duree_travaux
-
-    def total_annuite(self):
-        return self.annuite_bien() + self.annuite_travaux()
-
-
-class SCIIS:
-    def __init__(self, bien: BienImmobilier, emprunt: Emprunt, flux: LoyersEtCharges):
-        self.bien = bien
-        self.emprunt = emprunt
-        self.flux = flux
-        self.amortissements = Amortissements(bien)
-
-    def resultat_fiscal(self, annee):
-        loyers = self.flux.loyers(annee)
-        charges = self.flux.charges(annee)
-        interets = self.emprunt.interets_annuels(annee)
-        assurance = self.emprunt.assurance_annuelle()
-        amort = self.amortissements.total_annuite()
-        return loyers - charges - interets - assurance - amort
-
-    def impot_is(self, resultat):
-        if resultat <= 0:
-            return 0
-        if resultat <= 42500:
-            return resultat * 0.15
-        else:
-            return 42500 * 0.15 + (resultat - 42500) * 0.25
-
-    def projection_sur_10_ans(self):
-        projection = []
-        for annee in range(10):
-            loyers = self.flux.loyers(annee)
-            charges = self.flux.charges(annee)
-            interets = self.emprunt.interets_annuels(annee)
-            assurance = self.emprunt.assurance_annuelle()
-            amort = self.amortissements.total_annuite()
-            resultat = loyers - charges - interets - assurance - amort
-            impot = self.impot_is(resultat)
-            cashflow = loyers - charges - self.emprunt.calcul_mensualite() * 12 - assurance - impot
-            projection.append({
-                'annee': annee + 1,
-                'loyers': loyers,
-                'charges': charges,
-                'interets': interets,
-                'assurance': assurance,
-                'amortissements': amort,
-                'resultat_fiscal': resultat,
-                'impot_is': impot,
-                'cashflow_net_apres_is': cashflow
+        for mois in range(1, self.duree_annees * 12 + 1):
+            if mois <= self.differe_mois:
+                interets = capital_rest * taux_mensuel
+                principal = 0
+                capital_rest += interets
+            else:
+                if mensualite_hors_assurance is None:
+                    mensualite_hors_assurance = self.mensualite_emprunt() - capital * (self.taux_assurance / 100 / 12)
+                interets = capital_rest * taux_mensuel
+                principal = mensualite_hors_assurance - interets
+                capital_rest -= principal
+                if capital_rest < 0:
+                    principal += capital_rest
+                    capital_rest = 0
+            rows.append({
+                'Mois': mois,
+                'Année': (mois - 1) // 12 + 1,
+                'Intérêts': interets,
+                'Principal': principal,
+                'Capital restant dû': capital_rest
             })
-        return projection
+
+        return pd.DataFrame(rows)
+
+    def amortissements(self):
+        valeur_bati = self.prix_bien * (1 - self.part_terrain / 100)
+        amortissements = []
+
+        for annee in range(1, 11):
+            bati = valeur_bati / self.duree_amort_bati if annee <= self.duree_amort_bati else 0
+            mobilier = self.mobilier / self.duree_amort_mobilier if annee <= self.duree_amort_mobilier else 0
+            travaux = self.montant_travaux / self.duree_amort_travaux if annee <= self.duree_amort_travaux else 0
+            frais = (
+                (self.frais_dossier + self.frais_agence + self.frais_garantie + self.frais_tiers)
+                / self.duree_amort_frais if annee <= self.duree_amort_frais else 0
+            )
+            total = bati + mobilier + travaux + frais
+            amortissements.append({
+                'Année': annee,
+                'Amortissement Bâti': bati,
+                'Amortissement Mobilier': mobilier,
+                'Amortissement Travaux': travaux,
+                'Amortissement Frais': frais,
+                'Total Amortissement': total
+            })
+
+        return pd.DataFrame(amortissements)
+
+    def resultat_fiscal_annuel(self):
+        amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
+        interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+
+        mensualite = self.mensualite_emprunt()
+        resultats = []
+
+        for annee in range(1, 11):
+            revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+            charges = (
+                self.charges_copro + self.assurance + self.taxe_fonciere +
+                self.frais_entretien + self.frais_compta + self.frais_bancaires +
+                self.gestion_locative
+            )
+            interet = interets.get(annee, 0)
+            dotation = amort.get(annee, 0)
+            resultat_fiscal = revenus - charges - interet - dotation
+            impot = max(0, resultat_fiscal * self.taux_is)
+            cashflow = revenus - charges - mensualite * 12
+
+            invest_initial = self.apport + max(0, self.montant_emprunt)
+            rent_brute = revenus * 12 / invest_initial * 100
+            rent_nette = (revenus - charges - impot) / invest_initial * 100
+
+            resultats.append({
+                'Année': annee,
+                'Revenus nets': revenus,
+                'Charges': charges,
+                'Intérêts': interet,
+                'Amortissements': dotation,
+                'Résultat fiscal': resultat_fiscal,
+                'IS': impot,
+                'Cashflow annuel': cashflow,
+                'Rentabilité brute (%)': rent_brute,
+                'Rentabilité nette (%)': rent_nette
+            })
+
+        return pd.DataFrame(resultats)
