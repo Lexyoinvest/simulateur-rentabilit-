@@ -39,6 +39,8 @@ class LMNPReel:
 
     # Fiscalité
     tmi: float  # tranche marginale d’imposition
+    duree_amort_bati: int = 30
+    duree_amort_mobilier: int = 7
 
     # Internes
     montant_emprunt: float = field(init=False)
@@ -103,13 +105,13 @@ class LMNPReel:
 
     def amortissements(self):
         valeur_bati = self.prix_bien * (1 - self.part_terrain / 100)
-        amort_bati_annuel = valeur_bati / 30
-        amort_mobilier_annuel = self.mobilier / 7
+        amort_bati_annuel = valeur_bati / self.duree_amort_bati
+        amort_mobilier_annuel = self.mobilier / self.duree_amort_mobilier
 
         amortissements = []
         for annee in range(1, 11):
-            bati = amort_bati_annuel if annee <= 30 else 0
-            mobilier = amort_mobilier_annuel if annee <= 7 else 0
+            bati = amort_bati_annuel if annee <= self.duree_amort_bati else 0
+            mobilier = amort_mobilier_annuel if annee <= self.duree_amort_mobilier else 0
             total = bati + mobilier
             amortissements.append({
                 'Année': annee,
