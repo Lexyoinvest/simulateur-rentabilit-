@@ -264,22 +264,23 @@ elif regime == "SCI à l'IS":
         loyer_mensuel_hc: float
         vacance_locative_mois: int
 
-        # Champs par défaut en fin
+        duree_amort_bati: int
+        duree_amort_travaux: int
+        duree_amort_mobilier: int
+        duree_amort_frais: int
+
         gestion_locative: float = 0.0
         frais_notaire_pct: float = 8.0
-        duree_amort_bati: int = 30
-        duree_amort_travaux: int = 10
-        duree_amort_mobilier: int = 7
-        duree_amort_frais: int = 5
-        taux_is: float = 0.25
 
         montant_emprunt: float = field(init=False)
+        frais_notaire: float = field(init=False)
 
         def __post_init__(self):
-            frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
+            self.frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
             total_a_financer = (
-                self.prix_bien + frais_notaire + self.frais_agence + self.frais_dossier +
-                self.frais_garantie + self.frais_tiers + self.montant_travaux
+                self.prix_bien + self.frais_notaire + self.frais_agence +
+                self.frais_dossier + self.frais_garantie +
+                self.frais_tiers + self.montant_travaux
             )
             self.montant_emprunt = max(0, total_a_financer - self.apport)
 
@@ -364,38 +365,42 @@ elif regime == "SCI à l'IS":
 
             for annee in range(1, 11):
                 revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
-                charges = (
+                charges_reelles = (
                     self.charges_copro + self.assurance + self.taxe_fonciere +
                     self.frais_entretien + self.frais_compta + self.frais_bancaires +
                     self.gestion_locative
                 )
+                charges_repercutees = self.charges_copro * 0.8
+                charges_fiscales = charges_reelles - charges_repercutees
+
                 interet = interets.get(annee, 0)
                 dotation = amort.get(annee, 0)
-                resultat_fiscal = revenus - charges - interet - dotation
-                impot = max(0, resultat_fiscal * self.taux_is)
-                cashflow = revenus - charges - mensualite * 12
+                resultat_fiscal = revenus - charges_fiscales - interet - dotation
 
-                invest_initial = self.apport + max(0, self.montant_emprunt)
-                rent_brute = revenus * 12 / invest_initial * 100
-                rent_nette = (revenus - charges - impot) / invest_initial * 100
+                if resultat_fiscal <= 42500:
+                    impot = max(0, resultat_fiscal * 0.15)
+                else:
+                    impot = max(0, 42500 * 0.15 + (resultat_fiscal - 42500) * 0.25)
+
+                cashflow_mensuel = (revenus - charges_reelles - impot - mensualite * 12) / 12
 
                 resultats.append({
                     'Année': annee,
                     'Revenus nets': revenus,
-                    'Charges': charges,
+                    'Charges réelles': charges_reelles,
+                    'Charges récupérées': charges_repercutees,
                     'Intérêts': interet,
                     'Amortissements': dotation,
                     'Résultat fiscal': resultat_fiscal,
                     'IS': impot,
-                    'Cashflow annuel': cashflow,
-                    'Rentabilité brute (%)': rent_brute,
-                    'Rentabilité nette (%)': rent_nette
+                    'Cashflow mensuel (€)': cashflow_mensuel
                 })
 
             return pd.DataFrame(resultats)
 
-    # Interface utilisateur SCI à l’IS
+    # Interface utilisateur SCI
     st.header("Simulation SCI à l'IS")
+
     prix_bien = st.number_input("Prix du bien (€)", value=200000)
     part_terrain = st.number_input("Part du terrain (%)", value=15)
     apport = st.number_input("Apport (€)", value=20000)
@@ -405,6 +410,11 @@ elif regime == "SCI à l'IS":
     frais_garantie = st.number_input("Frais de garantie (€)", value=1000)
     frais_tiers = st.number_input("Frais tiers (€)", value=500)
     mobilier = st.number_input("Montant du mobilier (€)", value=3000)
+
+    duree_amort_bati = st.slider("Durée d'amortissement bâti (ans)", 20, 50, 30)
+    duree_amort_travaux = st.slider("Durée d'amortissement travaux (ans)", 1, 30, 10)
+    duree_amort_mobilier = st.slider("Durée d'amortissement mobilier (ans)", 1, 30, 7)
+    duree_amort_frais = st.slider("Durée d'amortissement frais (ans)", 1, 30, 5)
 
     duree_annees = st.slider("Durée du prêt (années)", 5, 30, 20)
     taux_interet = st.number_input("Taux d'intérêt (%)", value=2.0)
@@ -429,8 +439,15 @@ elif regime == "SCI à l'IS":
             duree_annees, taux_interet, taux_assurance, differe_mois,
             charges_copro, assurance, taxe_fonciere, frais_entretien,
             frais_compta, frais_bancaires, loyer_mensuel_hc, vacance_locative_mois,
+            duree_amort_bati, duree_amort_travaux, duree_amort_mobilier, duree_amort_frais,
             gestion_locative
         )
+
+        st.subheader("Frais de notaire calculés :")
+        st.write(f"{sci.frais_notaire:,.0f} €")
+
+        st.subheader("Montant de l'emprunt calculé :")
+        st.write(f"{sci.montant_emprunt:,.0f} €")
 
         st.subheader("Résultats sur 10 ans")
         st.dataframe(sci.resultat_fiscal_annuel())
@@ -438,4 +455,3 @@ elif regime == "SCI à l'IS":
         st.dataframe(sci.amortissements())
         st.subheader("Tableau d'amortissement de l'emprunt")
         st.dataframe(sci.tableau_amortissement_emprunt())
-
