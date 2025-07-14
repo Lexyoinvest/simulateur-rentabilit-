@@ -307,7 +307,7 @@ elif regime == "SCI à l'IS":
                     'Intérêts': interets,
                     'Principal': principal,
                     'Capital restant dû': capital_rest 
-                    'Assurance': capital * self.taux_assurance / 100 / 12
+                    'Assurance': capital * taux_assurance / 12
                 })
 
             return pd.DataFrame(rows)
