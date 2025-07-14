@@ -358,7 +358,8 @@ elif regime == "SCI à l'IS":
 
         def resultat_fiscal_annuel(self):
             amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
-            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict() 
+            deficit_report = 0  # déficit reportable initialisé à 0
 
             mensualite = self.mensualite_emprunt()
             resultats = []
@@ -375,8 +376,13 @@ elif regime == "SCI à l'IS":
 
                 interet = interets.get(annee, 0)
                 dotation = amort.get(annee, 0)
-                resultat_fiscal = revenus - charges_fiscales - interet - dotation
-
+                resultat_fiscal = revenus - charges_fiscales - interet - dotation + deficit_report
+                
+                
+                if resultat_fiscal < 0:
+                   deficit_report = resultat_fiscal  # déficit à reporter à l'année suivante
+                else:
+                   deficit_report = 0  # déficit utilisé, plus rien à reporter
                 if resultat_fiscal <= 42500:
                     impot = max(0, resultat_fiscal * 0.15)
                 else:
