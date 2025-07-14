@@ -241,8 +241,10 @@ if regime == "LMNP réel":
         st.subheader("Tableau d'amortissement de l'emprunt")
         st.dataframe(lmnp.tableau_amortissement())
 
-elif regime == "SCI à l'IS":
-    @dataclass
+from dataclasses import dataclass, field
+import pandas as pd
+
+@dataclass
 class SCIaIS:
     # Données d'acquisition
     prix_bien: float
