@@ -363,7 +363,7 @@ elif regime == "SCI à l'IS":
     mensualite = self.mensualite_emprunt()
     resultats = []
 
-    deficit_reportable = 0
+    deficit_reportable = 0.0  # cumul des déficits à reporter
 
     for annee in range(1, 11):
         revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
@@ -377,18 +377,20 @@ elif regime == "SCI à l'IS":
 
         interet = interets.get(annee, 0)
         dotation = amort.get(annee, 0)
-        resultat_fiscal = revenus - charges_fiscales - interet - dotation + deficit_reportable
+        resultat_fiscal_brut = revenus - charges_fiscales - interet - dotation
 
-        if resultat_fiscal < 0:
-            deficit_reportable = resultat_fiscal  # conserve le déficit pour l’année suivante
-            impot = 0  # pas d’impôt sur un résultat négatif
+        # Appliquer le déficit reportable
+        resultat_fiscal_net = resultat_fiscal_brut + deficit_reportable
+
+        if resultat_fiscal_net < 0:
+            # Nouveau déficit à reporter : on l'ajoute au cumul
+            deficit_reportable += resultat_fiscal_brut
+            impot = 0
         else:
-            # déficit épuisé, calcul IS
+            # Résultat positif, on efface le déficit
+            impot = resultat_fiscal_net * 0.15 if resultat_fiscal_net <= 42500 else \
+                    42500 * 0.15 + (resultat_fiscal_net - 42500) * 0.25
             deficit_reportable = 0
-            if resultat_fiscal <= 42500:
-                impot = resultat_fiscal * 0.15
-            else:
-                impot = 42500 * 0.15 + (resultat_fiscal - 42500) * 0.25
 
         cashflow_mensuel = (revenus - charges_reelles - impot - mensualite * 12) / 12 + charges_repercutees / 12
 
@@ -399,13 +401,15 @@ elif regime == "SCI à l'IS":
             'Charges récupérées': charges_repercutees,
             'Intérêts': interet,
             'Amortissements': dotation,
-            'Résultat fiscal': resultat_fiscal,
+            'Résultat fiscal (avant déficit)': resultat_fiscal_brut,
+            'Résultat fiscal net': resultat_fiscal_net,
             'IS': impot,
-            'Cashflow mensuel (€)': cashflow_mensuel,
-            'Déficit reportable': deficit_reportable if deficit_reportable < 0 else 0
+            'Déficit reportable': deficit_reportable if deficit_reportable < 0 else 0,
+            'Cashflow mensuel (€)': cashflow_mensuel
         })
 
     return pd.DataFrame(resultats)
+
 
     # Interface utilisateur SCI
     st.header("Simulation SCI à l'IS")
