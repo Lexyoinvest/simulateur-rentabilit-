@@ -235,7 +235,8 @@ elif regime == "SCI à l'IS":
         differe_mois: int
 
         charges_copro: float
-        assurance: float
+        assurance: float 
+        assurance_gli: float
         taxe_fonciere: float
         frais_entretien: float
         frais_compta: float
@@ -349,7 +350,7 @@ elif regime == "SCI à l'IS":
                 charges_reelles = (
                     self.charges_copro + self.assurance + self.taxe_fonciere +
                     self.frais_entretien + self.frais_compta + self.frais_bancaires +
-                    self.gestion_locative
+                    self.gestion_locative + self.assurance_gli
                 )
                 charges_repercutees = self.charges_copro * 0.8
                 charges_fiscales = charges_reelles - charges_repercutees
@@ -396,15 +397,15 @@ elif regime == "SCI à l'IS":
     # Interface utilisateur SCI
     st.header("Simulation SCI à l'IS")
 
-    prix_bien = st.number_input("Prix du bien (€)", value=200000)
-    part_terrain = st.number_input("Part du terrain (%)", value=15)
-    apport = st.number_input("Apport (€)", value=20000)
-    frais_agence = st.number_input("Frais d'agence (€)", value=5000)
-    frais_dossier = st.number_input("Frais de dossier (€)", value=1000)
-    montant_travaux = st.number_input("Montant des travaux (€)", value=10000)
-    frais_garantie = st.number_input("Frais de garantie (€)", value=1000)
-    frais_tiers = st.number_input("Frais tiers (€)", value=500)
-    mobilier = st.number_input("Montant du mobilier (€)", value=3000)
+    prix_bien = st.number_input("Prix du bien (€)", value=0)
+    part_terrain = st.number_input("Part du terrain (%)", value=10)
+    apport = st.number_input("Apport (€)", value=0)
+    frais_agence = st.number_input("Frais d'agence (€)", value=0)
+    frais_dossier = st.number_input("Frais de dossier (€)", value=0)
+    montant_travaux = st.number_input("Montant des travaux (€)", value=0)
+    frais_garantie = st.number_input("Frais de garantie (€)", value=0)
+    frais_tiers = st.number_input("Frais pris par des tiers (€)", value=0)
+    mobilier = st.number_input("Montant du mobilier (€)", value=0)
 
     duree_amort_bati = st.slider("Durée d'amortissement bâti (ans)", 20, 50, 30)
     duree_amort_travaux = st.slider("Durée d'amortissement travaux (ans)", 1, 30, 10)
@@ -412,19 +413,20 @@ elif regime == "SCI à l'IS":
     duree_amort_frais = st.slider("Durée d'amortissement frais (ans)", 1, 30, 5)
 
     duree_annees = st.slider("Durée du prêt (années)", 5, 30, 20)
-    taux_interet = st.number_input("Taux d'intérêt (%)", value=2.0)
+    taux_interet = st.number_input("Taux d'intérêt (%)", value=3.0)
     taux_assurance = st.number_input("Taux assurance emprunteur (%)", value=0.3)
     differe_mois = st.slider("Différé de remboursement (mois)", 0, 24, 0)
 
-    charges_copro = st.number_input("Charges de copropriété (€)", value=1000)
-    assurance = st.number_input("Assurance (€)", value=200)
-    taxe_fonciere = st.number_input("Taxe foncière (€)", value=800)
-    frais_entretien = st.number_input("Frais d'entretien (€)", value=400)
-    frais_compta = st.number_input("Frais de comptabilité (€)", value=500)
-    frais_bancaires = st.number_input("Frais bancaires (€)", value=100)
+    charges_copro = st.number_input("Charges de copropriété (€)", value=0)
+    assurance = st.number_input("Assurance PNO (€)", value=0) 
+    assurance_gli: st.number_input("Assurance GLI (€)", value=0)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=0)
+    frais_entretien = st.number_input("Frais d'entretien (€)", value=0)
+    frais_compta = st.number_input("Frais de comptabilité (€)", value=0)
+    frais_bancaires = st.number_input("Frais bancaires (€)", value=0)
     gestion_locative = st.number_input("Frais de gestion locative (€)", value=0)
 
-    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=850)
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
     vacance_locative_mois = st.slider("Mois de vacance locative", 0, 12, 1)
 
     if st.button("Lancer la simulation"):
