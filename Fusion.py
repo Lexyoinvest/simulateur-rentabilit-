@@ -172,7 +172,7 @@ if regime == "LMNP réel":
     st.subheader("Simulation LMNP réel")
     prix_bien = st.number_input("Prix du bien", value=0)
     part_terrain = st.slider("Part du terrain (%)", 0, 100, 10)
-    apport = st.number_input("Apport", value= prix_bien * 0,1)
+    apport = st.number_input("Apport", value=0)
     frais_dossier = st.number_input("Frais de dossier", value=0)
     frais_agence = st.number_input("Frais d'agence", value=0)
     montant_travaux = st.number_input("Montant travaux", value=0)
