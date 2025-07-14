@@ -127,62 +127,59 @@ if regime == "LMNP réel":
 
             return pd.DataFrame(amortissements)
 
-        def resultat_fiscal_annuel(self):
-            amort_df = self.amortissements()
-            amortissement_dict = amort_df.set_index('Année')['Total Amortissement'].to_dict()
-            amort_table = self.tableau_amortissement()
-            interets_annuels = amort_table.groupby('Année')['Intérêts'].sum()
+       def resultat_fiscal_annuel(self):
+    amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
+    interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+    deficit_report = 0
+    mensualite = self.mensualite_emprunt()
+    resultats = []
 
-            resultats = []
-            deficits_reportables = self.deficits_reportables.copy()
-            mensualite = self.mensualite_emprunt()
+    for annee in range(1, 11):
+        revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+        charges_reelles = (
+            self.charges_copro + self.assurance + self.taxe_fonciere +
+            self.frais_entretien + self.frais_compta + self.frais_bancaires +
+            self.gestion_locative
+        )
+        charges_repercutees = self.charges_copro * 0.8
+        charges_fiscales = charges_reelles - charges_repercutees
 
-            for annee in range(1, 11):
-                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
-                charges = (self.charges_copro + self.assurance_habitation + self.assurance_gli +
-                        self.taxe_fonciere + self.frais_entretien + self.frais_compta +
-                        self.frais_bancaires + self.gestion_locative + self.taxe_habitation)
-                interets = interets_annuels.get(annee, 0)
-                amort = amortissement_dict.get(annee, 0)
-                resultat = revenus - charges - interets - amort
+        interet = interets.get(annee, 0)
+        dotation = amort.get(annee, 0)
+        resultat_fiscal_courant = revenus - charges_fiscales - interet - dotation
+        resultat_fiscal_net = resultat_fiscal_courant + deficit_report
 
-                if resultat < 0:
-                    deficits_reportables[annee - 1] = -resultat
-                    resultat_fiscal = 0
-                else:
-                    resultat_fiscal = resultat
-                    for i in range(annee):
-                        if deficits_reportables[i] > 0:
-                            if resultat_fiscal >= deficits_reportables[i]:
-                                resultat_fiscal -= deficits_reportables[i]
-                                deficits_reportables[i] = 0
-                            else:
-                                deficits_reportables[i] -= resultat_fiscal
-                                resultat_fiscal = 0
-                                break
+        if resultat_fiscal_net <= 0:
+            impot = 0
+            deficit_report = resultat_fiscal_net
+        else:
+            if resultat_fiscal_net <= 42500:
+                impot = resultat_fiscal_net * 0.15
+            else:
+                impot = 42500 * 0.15 + (resultat_fiscal_net - 42500) * 0.25
+            deficit_report = 0
 
-                impot = resultat_fiscal * self.tmi / 100
-                cashflow = revenus - charges - mensualite * 12
-                investissement_initial = self.apport + max(0, self.montant_emprunt)
+        cashflow_mensuel = (
+            (revenus - charges_reelles - impot - mensualite * 12) / 12
+            + charges_repercutees / 12
+        )
 
-                rent_brute = (self.loyer_mensuel_hc * 12) / investissement_initial * 100
-                rent_nette = (revenus - charges - impot) / investissement_initial * 100
+        resultats.append({
+            'Année': annee,
+            'Revenus nets': revenus,
+            'Charges réelles': charges_reelles,
+            'Charges récupérées': charges_repercutees,
+            'Intérêts': interet,
+            'Amortissements': dotation,
+            'Résultat fiscal avant report': resultat_fiscal_courant,
+            'Déficit reporté': deficit_report,
+            'Résultat fiscal net': resultat_fiscal_net,
+            'IS': impot,
+            'Cashflow mensuel (€)': cashflow_mensuel
+        })
 
-                resultats.append({
-                    'Année': annee,
-                    'Revenus nets vacance': revenus,
-                    'Charges': charges,
-                    'Intérêts Emprunt': interets,
-                    'Amortissement': amort,
-                    'Résultat fiscal imposable': resultat_fiscal,
-                    'Impôt': impot,
-                    'Cashflow annuel': cashflow,
-                    'Rentabilité brute (%)': rent_brute,
-                    'Rentabilité nette (%)': rent_nette,
-                    'Déficits reportables': sum(deficits_reportables)
-                })
+    return pd.DataFrame(resultats)
 
-            return pd.DataFrame(resultats)
 
     # Interface utilisateur LMNP
     st.header("Simulation LMNP Réel")
