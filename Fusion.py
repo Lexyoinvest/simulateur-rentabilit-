@@ -377,24 +377,24 @@ elif regime == "SCI à l'IS":
         interet = interets.get(annee, 0)
         dotation = amort.get(annee, 0)
 
-        # Résultat courant de l’année
+        # Résultat courant
         resultat_fiscal_courant = revenus - charges_fiscales - interet - dotation
 
-        # Application du déficit reporté des années précédentes
+        # Appliquer le déficit antérieur
         resultat_fiscal_net = resultat_fiscal_courant + deficit_report
 
-        # Calcul de l’IS uniquement si résultat net positif
+        # Calcul IS
         if resultat_fiscal_net <= 0:
             impot = 0
-            deficit_report = resultat_fiscal_net  # on reporte le déficit
+            deficit_report = resultat_fiscal_net
         else:
             if resultat_fiscal_net <= 42500:
                 impot = resultat_fiscal_net * 0.15
             else:
                 impot = 42500 * 0.15 + (resultat_fiscal_net - 42500) * 0.25
-            deficit_report = 0  # plus rien à reporter
+            deficit_report = 0
 
-        # Cashflow mensuel (en tenant compte du loyer HC et charges récupérables)
+        # Cashflow mensuel
         cashflow_mensuel = (
             (revenus - charges_reelles - impot - mensualite * 12) / 12
             + charges_repercutees / 12
@@ -415,6 +415,7 @@ elif regime == "SCI à l'IS":
         })
 
     return pd.DataFrame(resultats)
+
 
 
     # Interface utilisateur SCI
