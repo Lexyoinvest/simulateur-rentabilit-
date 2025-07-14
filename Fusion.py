@@ -356,62 +356,61 @@ elif regime == "SCI à l'IS":
 
             return pd.DataFrame(amortissements)
 
-       def resultat_fiscal_annuel(self):
-    amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
-    interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+        def resultat_fiscal_annuel(self):
+            amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
+            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
 
-    mensualite = self.mensualite_emprunt()
-    resultats = []
+            mensualite = self.mensualite_emprunt()
+            resultats = []
 
-    deficit_reportable = 0.0
+            deficit_reportable = 0.0
 
-    for annee in range(1, 11):
-        revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
-        charges_reelles = (
-            self.charges_copro + self.assurance + self.taxe_fonciere +
-            self.frais_entretien + self.frais_compta + self.frais_bancaires +
-            self.gestion_locative
-        )
-        charges_repercutees = self.charges_copro * 0.8
-        charges_fiscales = charges_reelles - charges_repercutees
+            for annee in range(1, 11):
+                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+                charges_reelles = (
+                    self.charges_copro + self.assurance + self.taxe_fonciere +
+                    self.frais_entretien + self.frais_compta + self.frais_bancaires +
+                    self.gestion_locative
+                )
+                charges_repercutees = self.charges_copro * 0.8
+                charges_fiscales = charges_reelles - charges_repercutees
 
-        interet = interets.get(annee, 0.0)
-        dotation = amort.get(annee, 0.0)
+                interet = interets.get(annee, 0.0)
+                dotation = amort.get(annee, 0.0)
 
-        resultat_fiscal_brut = revenus - charges_fiscales - interet - dotation
-        resultat_fiscal_net = resultat_fiscal_brut + deficit_reportable
+                resultat_fiscal_brut = revenus - charges_fiscales - interet - dotation
+                resultat_fiscal_net = resultat_fiscal_brut + deficit_reportable
 
-        if resultat_fiscal_net < 0:
-            impot = 0.0
-            deficit_reportable = resultat_fiscal_net  # on cumule le déficit (valeur négative)
-        else:
-            # calcul IS après consommation du déficit
-            if resultat_fiscal_net <= 42500:
-                impot = resultat_fiscal_net * 0.15
-            else:
-                impot = 42500 * 0.15 + (resultat_fiscal_net - 42500) * 0.25
-            deficit_reportable = 0.0  # déficit consommé
+                if resultat_fiscal_net < 0:
+                    impot = 0.0
+                    deficit_reportable = resultat_fiscal_net  # cumul du déficit (négatif)
+                else:
+                    if resultat_fiscal_net <= 42500:
+                        impot = resultat_fiscal_net * 0.15
+                    else:
+                        impot = 42500 * 0.15 + (resultat_fiscal_net - 42500) * 0.25
+                    deficit_reportable = 0.0
 
-        cashflow_mensuel = (
-            (revenus - charges_reelles - impot - mensualite * 12) / 12 +
-            charges_repercutees / 12
-        )
+                cashflow_mensuel = (
+                    (revenus - charges_reelles - impot - mensualite * 12) / 12 +
+                    charges_repercutees / 12
+                )
 
-        resultats.append({
-            'Année': annee,
-            'Revenus nets': round(revenus, 2),
-            'Charges réelles': round(charges_reelles, 2),
-            'Charges récupérées': round(charges_repercutees, 2),
-            'Intérêts': round(interet, 2),
-            'Amortissements': round(dotation, 2),
-            'Résultat fiscal (avant déficit)': round(resultat_fiscal_brut, 2),
-            'Résultat fiscal net': round(resultat_fiscal_net, 2),
-            'Déficit reportable': round(deficit_reportable, 2) if deficit_reportable < 0 else 0.0,
-            'IS': round(impot, 2),
-            'Cashflow mensuel (€)': round(cashflow_mensuel, 2)
-        })
+                resultats.append({
+                    'Année': annee,
+                    'Revenus nets': round(revenus, 2),
+                    'Charges réelles': round(charges_reelles, 2),
+                    'Charges récupérées': round(charges_repercutees, 2),
+                    'Intérêts': round(interet, 2),
+                    'Amortissements': round(dotation, 2),
+                    'Résultat fiscal (avant déficit)': round(resultat_fiscal_brut, 2),
+                    'Résultat fiscal net': round(resultat_fiscal_net, 2),
+                    'Déficit reportable': round(deficit_reportable, 2) if deficit_reportable < 0 else 0.0,
+                    'IS': round(impot, 2),
+                    'Cashflow mensuel (€)': round(cashflow_mensuel, 2)
+                })
 
-    return pd.DataFrame(resultats)
+            return pd.DataFrame(resultats)
 
 
 
