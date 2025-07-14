@@ -25,15 +25,10 @@ if regime == "LMNP réel":
         frais_garantie: float
         frais_tiers: float
         mobilier: float
-        frais_notaire_pct: float = 8.0
-
-        # Emprunt
         duree_annees: int
         taux_interet: float
         taux_assurance: float
         differe_mois: int
-
-        # Charges annuelles
         charges_copro: float
         assurance_habitation: float
         assurance_gli: float
@@ -41,46 +36,38 @@ if regime == "LMNP réel":
         frais_entretien: float
         frais_compta: float
         frais_bancaires: float
-        gestion_locative: float = 0.0
-        taxe_habitation: float = 0.0
-
-        # Revenus
+        gestion_locative: float
+        taxe_habitation: float
         loyer_mensuel_hc: float
         vacance_locative_mois: int
-
-        # Fiscalité
         tmi: float
+        frais_notaire_pct: float = 8.0
         duree_amort_bati: int = 30
         duree_amort_mobilier: int = 7
-
-        # Internes
         montant_emprunt: float = field(init=False)
         deficits_reportables: list = field(default_factory=lambda: [0] * 10)
 
         def __post_init__(self):
             frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
             total_frais = (self.prix_bien + frais_notaire + self.frais_agence +
-                        self.frais_dossier + self.montant_travaux +
-                        self.frais_garantie + self.frais_tiers)
+                           self.frais_dossier + self.montant_travaux +
+                           self.frais_garantie + self.frais_tiers)
             self.montant_emprunt = max(0, total_frais - self.apport)
 
         def mensualite_emprunt(self):
-            taux_mensuel = self.taux_interet / 100 / 12
-            taux_assurance_mens = self.taux_assurance / 100 / 12
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
             capital = self.montant_emprunt
-
             capital_differe = capital
             for _ in range(self.differe_mois):
-                interets_intercalaires = capital_differe * taux_mensuel
-                capital_differe += interets_intercalaires
-
-            nb_mensualites = self.duree_annees * 12 - self.differe_mois
-            mensualite = (capital_differe * taux_mensuel) / (1 - (1 + taux_mensuel) ** -nb_mensualites)
-            assurance_mens = capital * taux_assurance_mens
-            return mensualite + assurance_mens
+                capital_differe += capital_differe * tm
+            n = self.duree_annees * 12 - self.differe_mois
+            mensualite_hors_assurance = capital_differe * tm / (1 - (1 + tm) ** -n)
+            assurance = capital * ta
+            return mensualite_hors_assurance + assurance
 
         def tableau_amortissement(self):
-            taux_mensuel = self.taux_interet / 100 / 12
+            tm = self.taux_interet / 100 / 12
             capital = self.montant_emprunt
             capital_rest = capital
             mensualite = None
@@ -88,13 +75,13 @@ if regime == "LMNP réel":
 
             for mois in range(1, self.duree_annees * 12 + 1):
                 if mois <= self.differe_mois:
-                    interets = capital_rest * taux_mensuel
+                    interets = capital_rest * tm
                     principal = 0
                     capital_rest += interets
                 else:
                     if mensualite is None:
                         mensualite = self.mensualite_emprunt() - (capital * self.taux_assurance / 100 / 12)
-                    interets = capital_rest * taux_mensuel
+                    interets = capital_rest * tm
                     principal = mensualite - interets
                     capital_rest -= principal
                     if capital_rest < 0:
@@ -106,87 +93,123 @@ if regime == "LMNP réel":
                     'Capital restant dû': capital_rest,
                     'Intérêts': interets,
                     'Principal remboursé': principal,
-                    'Mensualité avec assurance': mensualite + (capital * self.taux_assurance / 100 / 12)
+                    'Assurance': capital * self.taux_assurance / 100 / 12
                 })
-
             return pd.DataFrame(rows)
 
         def amortissements(self):
             valeur_bati = self.prix_bien * (1 - self.part_terrain / 100)
-            amort_bati_annuel = valeur_bati / self.duree_amort_bati
-            amort_mobilier_annuel = self.mobilier / self.duree_amort_mobilier
-
-            amortissements = []
+            bati = valeur_bati / self.duree_amort_bati
+            mobilier = self.mobilier / self.duree_amort_mobilier
+            rows = []
             for annee in range(1, 11):
-                bati = amort_bati_annuel if annee > self.differe_mois / 12 and annee <= self.duree_amort_bati else 0
-                mobilier = amort_mobilier_annuel if annee > self.differe_mois / 12 and annee <= self.duree_amort_mobilier else 0
-                total = bati + mobilier
-                amortissements.append({
+                if annee <= self.differe_mois // 12:
+                    amort_bati = 0
+                    amort_mobilier = 0
+                else:
+                    amort_bati = bati if annee <= self.duree_amort_bati else 0
+                    amort_mobilier = mobilier if annee <= self.duree_amort_mobilier else 0
+                total = amort_bati + amort_mobilier
+                rows.append({
                     'Année': annee,
-                    'Amortissement Bâti': bati,
-                    'Amortissement Mobilier': mobilier,
+                    'Amortissement Bâti': amort_bati,
+                    'Amortissement Mobilier': amort_mobilier,
                     'Total Amortissement': total
                 })
-
-            return pd.DataFrame(amortissements)
+            return pd.DataFrame(rows)
 
         def resultat_fiscal_annuel(self):
-            amort_df = self.amortissements()
-            amortissement_dict = amort_df.set_index('Année')['Total Amortissement'].to_dict()
-            amort_table = self.tableau_amortissement()
-            interets_annuels = amort_table.groupby('Année')['Intérêts'].sum()
-
-            resultats = []
-            deficits_reportables = self.deficits_reportables.copy()
+            amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
+            interets = self.tableau_amortissement().groupby('Année')['Intérêts'].sum().to_dict()
             mensualite = self.mensualite_emprunt()
+            resultats = []
 
             for annee in range(1, 11):
                 revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
                 charges = (self.charges_copro + self.assurance_habitation + self.assurance_gli +
-                        self.taxe_fonciere + self.frais_entretien + self.frais_compta +
-                        self.frais_bancaires + self.gestion_locative + self.taxe_habitation)
-                interets = interets_annuels.get(annee, 0)
-                amort = amortissement_dict.get(annee, 0)
-                resultat = revenus - charges - interets - amort
+                           self.taxe_fonciere + self.frais_entretien + self.frais_compta +
+                           self.frais_bancaires + self.gestion_locative + self.taxe_habitation)
+                interet = interets.get(annee, 0)
+                amorti = amort.get(annee, 0)
+                resultat = revenus - charges - interet - amorti
 
                 if resultat < 0:
-                    deficits_reportables[annee - 1] = -resultat
+                    self.deficits_reportables[annee - 1] = -resultat
                     resultat_fiscal = 0
                 else:
                     resultat_fiscal = resultat
                     for i in range(annee):
-                        if deficits_reportables[i] > 0:
-                            if resultat_fiscal >= deficits_reportables[i]:
-                                resultat_fiscal -= deficits_reportables[i]
-                                deficits_reportables[i] = 0
+                        if self.deficits_reportables[i] > 0:
+                            if resultat_fiscal >= self.deficits_reportables[i]:
+                                resultat_fiscal -= self.deficits_reportables[i]
+                                self.deficits_reportables[i] = 0
                             else:
-                                deficits_reportables[i] -= resultat_fiscal
+                                self.deficits_reportables[i] -= resultat_fiscal
                                 resultat_fiscal = 0
                                 break
 
                 impot = resultat_fiscal * self.tmi / 100
                 cashflow = revenus - charges - mensualite * 12
                 investissement_initial = self.apport + max(0, self.montant_emprunt)
-
                 rent_brute = (self.loyer_mensuel_hc * 12) / investissement_initial * 100
                 rent_nette = (revenus - charges - impot) / investissement_initial * 100
 
                 resultats.append({
                     'Année': annee,
-                    'Revenus nets vacance': revenus,
+                    'Revenus nets': revenus,
                     'Charges': charges,
-                    'Intérêts Emprunt': interets,
-                    'Amortissement': amort,
-                    'Résultat fiscal imposable': resultat_fiscal,
+                    'Intérêts': interet,
+                    'Amortissements': amorti,
+                    'Résultat fiscal': resultat_fiscal,
                     'Impôt': impot,
-                    'Cashflow annuel': cashflow,
+                    'Cashflow': cashflow,
                     'Rentabilité brute (%)': rent_brute,
-                    'Rentabilité nette (%)': rent_nette,
-                    'Déficits reportables': sum(deficits_reportables)
+                    'Rentabilité nette (%)': rent_nette
                 })
-
             return pd.DataFrame(resultats)
 
+    # Interface Streamlit LMNP réel
+    st.subheader("Simulation LMNP réel")
+    prix_bien = st.number_input("Prix du bien", value=200000)
+    part_terrain = st.slider("Part du terrain (%)", 0, 100, 15)
+    apport = st.number_input("Apport", value=20000)
+    frais_dossier = st.number_input("Frais de dossier", value=1000)
+    frais_agence = st.number_input("Frais d'agence", value=5000)
+    montant_travaux = st.number_input("Montant travaux", value=15000)
+    frais_garantie = st.number_input("Frais de garantie", value=1000)
+    frais_tiers = st.number_input("Frais tiers", value=500)
+    mobilier = st.number_input("Montant du mobilier", value=3000)
+    duree_annees = st.slider("Durée du prêt (ans)", 5, 30, 20)
+    taux_interet = st.number_input("Taux d'intérêt (%)", value=2.0)
+    taux_assurance = st.number_input("Taux assurance (%)", value=0.3)
+    differe_mois = st.slider("Différé (mois)", 0, 24, 0)
+    charges_copro = st.number_input("Charges copropriété", value=1000)
+    assurance_habitation = st.number_input("Assurance habitation", value=300)
+    assurance_gli = st.number_input("Assurance GLI", value=250)
+    taxe_fonciere = st.number_input("Taxe foncière", value=900)
+    frais_entretien = st.number_input("Entretien", value=400)
+    frais_compta = st.number_input("Comptabilité", value=600)
+    frais_bancaires = st.number_input("Frais bancaires", value=100)
+    gestion_locative = st.number_input("Gestion locative", value=0)
+    taxe_habitation = st.number_input("Taxe d’habitation", value=0)
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC", value=850)
+    vacance_locative_mois = st.slider("Mois vacance", 0, 12, 1)
+    tmi = st.slider("TMI (%)", 0, 45, 30)
+
+    if st.button("Lancer la simulation"):
+        lmnp = LMNPReel(
+            prix_bien, part_terrain, apport, frais_dossier, frais_agence,
+            montant_travaux, frais_garantie, frais_tiers, mobilier,
+            duree_annees, taux_interet, taux_assurance, differe_mois,
+            charges_copro, assurance_habitation, assurance_gli, taxe_fonciere,
+            frais_entretien, frais_compta, frais_bancaires, gestion_locative,
+            taxe_habitation, loyer_mensuel_hc, vacance_locative_mois, tmi
+        )
+        st.dataframe(lmnp.resultat_fiscal_annuel())
+        st.subheader("📉 Tableau d’amortissement de l’emprunt")
+        st.dataframe(lmnp.tableau_amortissement())
+        st.subheader("📆 Amortissements comptables")
+        st.dataframe(lmnp.amortissements())
 
 # Tu veux aussi la partie SCI à l'IS complète ?
 # --------------------------------------------------------------------------------
