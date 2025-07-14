@@ -14,7 +14,7 @@ regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "
 # --------------------------------------------------------------------------------
 if regime == "LMNP réel":
    @dataclass
-class LMNPReel:
+   class LMNPReel:
     # Données achat
     prix_bien: float
     part_terrain: float
