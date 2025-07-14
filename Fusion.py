@@ -14,49 +14,40 @@ regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "
 # --------------------------------------------------------------------------------
 if regime == "LMNP réel":
     @dataclass
-    class LMNPReel: 
-    prix_bien: float
-    part_terrain: float
-    apport: float
-    frais_dossier: float
-    frais_agence: float
-    montant_travaux: float
-    frais_garantie: float
-    frais_tiers: float
-    mobilier: float
-    frais_notaire_pct: float = 8.0
+    class LMNPReel:
+        # Données achat
+        prix_bien: float
+        part_terrain: float
+        apport: float
+        frais_dossier: float
+        frais_agence: float
+        montant_travaux: float
+        frais_garantie: float
+        frais_tiers: float
+        mobilier: float
+        duree_annees: int
+        taux_interet: float
+        taux_assurance: float
+        differe_mois: int
+        charges_copro: float
+        assurance_habitation: float
+        assurance_gli: float
+        taxe_fonciere: float
+        frais_entretien: float
+        frais_compta: float
+        frais_bancaires: float
+        gestion_locative: float
+        taxe_habitation: float
+        loyer_mensuel_hc: float
+        vacance_locative_mois: int
+        tmi: float
+        frais_notaire_pct: float = 8.0
+        duree_amort_bati: int = 30
+        duree_amort_mobilier: int = 7
+        montant_emprunt: float = field(init=False)
+        deficits_reportables: list = field(default_factory=lambda: [0] * 10)
 
-    # Emprunt
-    duree_annees: int
-    taux_interet: float
-    taux_assurance: float
-    differe_mois: int
-
-    # Charges annuelles
-    charges_copro: float
-    assurance_habitation: float
-    assurance_gli: float
-    taxe_fonciere: float
-    frais_entretien: float
-    frais_compta: float
-    frais_bancaires: float
-    gestion_locative: float = 0.0
-    taxe_habitation: float = 0.0
-
-    # Revenus
-    loyer_mensuel_hc: float
-    vacance_locative_mois: int
-
-    # Fiscalité
-    tmi: float
-    duree_amort_bati: int = 30
-    duree_amort_mobilier: int = 7
-
-    # Internes
-    montant_emprunt: float = field(init=False)
-    deficits_reportables: list = field(default_factory=lambda: [0] * 10)
-
-    def __post_init__(self):
+        def __post_init__(self):
         frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
         total_frais = (
             self.prix_bien + frais_notaire + self.frais_agence +
@@ -187,6 +178,7 @@ if regime == "LMNP réel":
             })
 
         return pd.DataFrame(resultats)
+
 # Tu veux aussi la partie SCI à l'IS complète ?
 # --------------------------------------------------------------------------------
 # CLASSE SCI À L'IS
