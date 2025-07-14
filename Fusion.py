@@ -357,45 +357,62 @@ elif regime == "SCI à l'IS":
             return pd.DataFrame(amortissements)
 
         def resultat_fiscal_annuel(self):
-            amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
-            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+    amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
+    interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
 
-            mensualite = self.mensualite_emprunt()
-            resultats = []
+    mensualite = self.mensualite_emprunt()
+    resultats = []
+    deficit_report = 0  # déficit reporté année précédente
 
-            for annee in range(1, 11):
-                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
-                charges_reelles = (
-                    self.charges_copro + self.assurance + self.taxe_fonciere +
-                    self.frais_entretien + self.frais_compta + self.frais_bancaires +
-                    self.gestion_locative
-                )
-                charges_repercutees = self.charges_copro * 0.8
-                charges_fiscales = charges_reelles - charges_repercutees
+    for annee in range(1, 11):
+        revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+        charges_reelles = (
+            self.charges_copro + self.assurance + self.taxe_fonciere +
+            self.frais_entretien + self.frais_compta + self.frais_bancaires +
+            self.gestion_locative
+        )
+        charges_repercutees = self.charges_copro * 0.8
+        charges_fiscales = charges_reelles - charges_repercutees
 
-                interet = interets.get(annee, 0)
-                dotation = amort.get(annee, 0)
-                resultat_fiscal = revenus - charges_fiscales - interet - dotation
+        interet = interets.get(annee, 0)
+        dotation = amort.get(annee, 0)
 
-                if resultat_fiscal <= 42500:
-                    impot = max(0, resultat_fiscal * 0.15)
-                else:
-                    impot = max(0, 42500 * 0.15 + (resultat_fiscal - 42500) * 0.25)
+        # Calcul du résultat fiscal avant report
+        resultat_fiscal_courant = revenus - charges_fiscales - interet - dotation
 
-                cashflow_mensuel = (revenus - charges_reelles - impot - mensualite * 12) / 12 + charges_repercutees / 12
-                resultats.append({
-                    'Année': annee,
-                    'Revenus nets': revenus,
-                    'Charges réelles': charges_reelles,
-                    'Charges récupérées': charges_repercutees,
-                    'Intérêts': interet,
-                    'Amortissements': dotation,
-                    'Résultat fiscal': resultat_fiscal,
-                    'IS': impot,
-                    'Cashflow mensuel (€)': cashflow_mensuel
-                })
+        # Appliquer le déficit reporté de l'année précédente
+        resultat_fiscal_net = resultat_fiscal_courant + deficit_report
 
-            return pd.DataFrame(resultats)
+        # Calcul de l'impôt sur les sociétés
+        if resultat_fiscal_net <= 42500:
+            impot = max(0, resultat_fiscal_net * 0.15)
+        else:
+            impot = max(0, 42500 * 0.15 + (resultat_fiscal_net - 42500) * 0.25)
+
+        # Calcul du déficit à reporter (si résultat fiscal net négatif)
+        if resultat_fiscal_net < 0:
+            deficit_report = resultat_fiscal_net  # négatif, à reporter
+            impot = 0  # pas d'impôt sur un résultat négatif
+        else:
+            deficit_report = 0  # déficit totalement utilisé
+
+        cashflow_mensuel = (revenus - charges_reelles - impot - mensualite * 12) / 12 + charges_repercutees / 12
+
+        resultats.append({
+            'Année': annee,
+            'Revenus nets': revenus,
+            'Charges réelles': charges_reelles,
+            'Charges récupérées': charges_repercutees,
+            'Intérêts': interet,
+            'Amortissements': dotation,
+            'Résultat fiscal avant report': resultat_fiscal_courant,
+            'Déficit reporté': deficit_report,
+            'Résultat fiscal net': resultat_fiscal_net,
+            'IS': impot,
+            'Cashflow mensuel (€)': cashflow_mensuel
+        })
+
+    return pd.DataFrame(resultats)
 
     # Interface utilisateur SCI
     st.header("Simulation SCI à l'IS")
