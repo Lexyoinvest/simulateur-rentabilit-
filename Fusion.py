@@ -382,8 +382,7 @@ elif regime == "SCI à l'IS":
                 else:
                     impot = max(0, 42500 * 0.15 + (resultat_fiscal - 42500) * 0.25)
 
-                cashflow_mensuel = (Revenus - Charges - IS - Mensualité + Charges récupérables) / 12
-
+                cashflow_mensuel = (revenus - charges_reelles - impot - mensualite * 12) / 12 + charges_repercutees / 12
                 resultats.append({
                     'Année': annee,
                     'Revenus nets': revenus,
