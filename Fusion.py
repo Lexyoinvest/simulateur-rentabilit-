@@ -1,13 +1,3 @@
-# === MODIFICATIONS APPLIQUÉES ===
-# - LMNP réel :
-#   • Cashflow devient mensuel
-#   • Suppression des colonnes rentabilité brute et nette
-#   • Ajout des charges récupérables (80% charges de copropriété)
-# - SCI à l'IS :
-#   • Ajout de l’assurance dans le tableau d’amortissement
-#   • Vérification que l’assurance, GLI et PNO sont bien intégrées au résultat fiscal et cashflow
-# ===================================
-
 import streamlit as st
 from dataclasses import dataclass, field
 import numpy as np
