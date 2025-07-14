@@ -350,7 +350,7 @@ elif regime == "SCI à l'IS":
                 charges_reelles = (
                     self.charges_copro + self.assurance + self.taxe_fonciere +
                     self.frais_entretien + self.frais_compta + self.frais_bancaires +
-                    self.gestion_locative
+                    self.gestion_locative + self.assurance_gli
                 )
                 charges_repercutees = self.charges_copro * 0.8
                 charges_fiscales = charges_reelles - charges_repercutees
