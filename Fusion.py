@@ -256,7 +256,6 @@ class SCIaIS:
     frais_garantie: float
     frais_tiers: float
     mobilier: float
-    frais_notaire_pct: float = 8.0
 
     # Emprunt
     duree_annees: int
@@ -271,19 +270,19 @@ class SCIaIS:
     frais_entretien: float
     frais_compta: float
     frais_bancaires: float
-    gestion_locative: float = 0.0
 
     # Revenus
     loyer_mensuel_hc: float
     vacance_locative_mois: int
 
-    # Amortissements
+    # Champs avec valeur par défaut (à placer APRÈS)
+    gestion_locative: float = 0.0
+    frais_notaire_pct: float = 8.0
     duree_amort_bati: int = 30
     duree_amort_travaux: int = 10
     duree_amort_mobilier: int = 7
     duree_amort_frais: int = 5
-
-    taux_is: float = 0.25  # taux d’IS
+    taux_is: float = 0.25
 
     montant_emprunt: float = field(init=False)
 
