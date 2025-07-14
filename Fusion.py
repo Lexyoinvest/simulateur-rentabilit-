@@ -235,7 +235,8 @@ elif regime == "SCI à l'IS":
         differe_mois: int
 
         charges_copro: float
-        assurance: float
+        assurance: float 
+        assurance_gli: float
         taxe_fonciere: float
         frais_entretien: float
         frais_compta: float
@@ -305,7 +306,6 @@ elif regime == "SCI à l'IS":
                     'Mois': mois,
                     'Année': (mois - 1) // 12 + 1,
                     'Intérêts': interets,
-                    'Assurance': round(self.montant_emprunt * (self.taux_assurance / 100 / 12), 2),
                     'Principal': principal,
                     'Capital restant dû': capital_rest
                 })
@@ -372,8 +372,6 @@ elif regime == "SCI à l'IS":
                     deficit_reportable = 0.0
 
                 cashflow_mensuel = (
-                    # On inclut aussi l’assurance emprunteur
-                    (revenus - charges_reelles - impot - mensualite * 12 - self.montant_emprunt * self.taux_assurance / 100) / 12 +
                     (revenus - charges_reelles - impot - mensualite * 12) / 12 +
                     charges_repercutees / 12
                 )
@@ -430,7 +428,6 @@ elif regime == "SCI à l'IS":
 
     loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
     vacance_locative_mois = st.slider("Mois de vacance locative", 0, 12, 1)
-
 
     if st.button("Lancer la simulation"):
         sci = SCIaIS(
