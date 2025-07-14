@@ -356,46 +356,56 @@ elif regime == "SCI à l'IS":
 
             return pd.DataFrame(amortissements)
 
-        def resultat_fiscal_annuel(self):
-            amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
-            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+       def resultat_fiscal_annuel(self):
+    amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
+    interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
 
-            mensualite = self.mensualite_emprunt()
-            resultats = []
+    mensualite = self.mensualite_emprunt()
+    resultats = []
 
-            for annee in range(1, 11):
-                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
-                charges_reelles = (
-                    self.charges_copro + self.assurance + self.taxe_fonciere +
-                    self.frais_entretien + self.frais_compta + self.frais_bancaires +
-                    self.gestion_locative
-                )
-                charges_repercutees = self.charges_copro * 0.8
-                charges_fiscales = charges_reelles - charges_repercutees
+    deficit_reportable = 0
 
-                interet = interets.get(annee, 0)
-                dotation = amort.get(annee, 0)
-                resultat_fiscal = revenus - charges_fiscales - interet - dotation
+    for annee in range(1, 11):
+        revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+        charges_reelles = (
+            self.charges_copro + self.assurance + self.taxe_fonciere +
+            self.frais_entretien + self.frais_compta + self.frais_bancaires +
+            self.gestion_locative
+        )
+        charges_repercutees = self.charges_copro * 0.8
+        charges_fiscales = charges_reelles - charges_repercutees
 
-                if resultat_fiscal <= 42500:
-                    impot = max(0, resultat_fiscal * 0.15)
-                else:
-                    impot = max(0, 42500 * 0.15 + (resultat_fiscal - 42500) * 0.25)
+        interet = interets.get(annee, 0)
+        dotation = amort.get(annee, 0)
+        resultat_fiscal = revenus - charges_fiscales - interet - dotation + deficit_reportable
 
-                cashflow_mensuel = (revenus - charges_reelles - impot - mensualite * 12) / 12 + charges_repercutees / 12
-                resultats.append({
-                    'Année': annee,
-                    'Revenus nets': revenus,
-                    'Charges réelles': charges_reelles,
-                    'Charges récupérées': charges_repercutees,
-                    'Intérêts': interet,
-                    'Amortissements': dotation,
-                    'Résultat fiscal': resultat_fiscal,
-                    'IS': impot,
-                    'Cashflow mensuel (€)': cashflow_mensuel
-                })
+        if resultat_fiscal < 0:
+            deficit_reportable = resultat_fiscal  # conserve le déficit pour l’année suivante
+            impot = 0  # pas d’impôt sur un résultat négatif
+        else:
+            # déficit épuisé, calcul IS
+            deficit_reportable = 0
+            if resultat_fiscal <= 42500:
+                impot = resultat_fiscal * 0.15
+            else:
+                impot = 42500 * 0.15 + (resultat_fiscal - 42500) * 0.25
 
-            return pd.DataFrame(resultats)
+        cashflow_mensuel = (revenus - charges_reelles - impot - mensualite * 12) / 12 + charges_repercutees / 12
+
+        resultats.append({
+            'Année': annee,
+            'Revenus nets': revenus,
+            'Charges réelles': charges_reelles,
+            'Charges récupérées': charges_repercutees,
+            'Intérêts': interet,
+            'Amortissements': dotation,
+            'Résultat fiscal': resultat_fiscal,
+            'IS': impot,
+            'Cashflow mensuel (€)': cashflow_mensuel,
+            'Déficit reportable': deficit_reportable if deficit_reportable < 0 else 0
+        })
+
+    return pd.DataFrame(resultats)
 
     # Interface utilisateur SCI
     st.header("Simulation SCI à l'IS")
