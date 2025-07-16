@@ -443,6 +443,8 @@ elif regime == "SCI à l'IS":
         st.dataframe(sci.tableau_amortissement_emprunt())
         st.subheader("📑 Amortissements comptables")
         st.dataframe(sci.amortissements())
+
+
 elif regime == "Micro BIC":
 
     @dataclass
