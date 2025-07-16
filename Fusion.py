@@ -7,7 +7,7 @@ st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", l
 st.title("Lexyo Simulateur de rentabilité immobilière")
 
 # Menu à gauche
-regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "SCI à l'IS", "Micro-Bic"])
+regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "SCI à l'IS",])
 
 # --------------------------------------------------------------------------------
 # CLASSE LMNP RÉEL
@@ -448,7 +448,7 @@ elif regime == "SCI à l'IS":
 # --------------------------------------------------------------------------------
 # CLASSE MICRO BIC
 # --------------------------------------------------------------------------------
-elif regime == "Micro-Bic":
+elif regime == "LMNP Micro-Bic":
 
     @dataclass
     class MicroBIC:
@@ -550,7 +550,7 @@ elif regime == "Micro-Bic":
             return pd.DataFrame(rows)
 
     # Interface utilisateur Micro BIC
-    st.title("Simulation Micro BIC")
+    st.title("Simulation LMNP Micro BIC")
 
     st.subheader("Revenus")
     loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
@@ -573,7 +573,7 @@ elif regime == "Micro-Bic":
     st.subheader("Fiscalité")
     tmi = st.slider("TMI (%)", 11, 45, 30)
 
-    if st.button("Lancer la simulation Micro BIC"):
+    if st.button("Lancer la simulation LMNP Micro BIC"):
         microbic = MicroBIC(
             loyer_mensuel_hc, vacance_locative_mois,
             charges_copro, taxe_fonciere, frais_gestion,
