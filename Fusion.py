@@ -445,7 +445,7 @@ elif regime == "SCI à l'IS":
         st.dataframe(sci.amortissements())
 
 
-elif regime == "Micro BIC":
+elif regime == "Micro-Bic":
 
     @dataclass
     class MicroBIC:
