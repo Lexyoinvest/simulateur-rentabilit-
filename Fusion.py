@@ -394,7 +394,7 @@ elif regime == "SCI à l'IS":
             return pd.DataFrame(results)
 
     # Interface utilisateur SCI à l'IS
-    st.title("🏢 Simulateur SCI à l’IS")
+    st.title("Simulateur SCI à l’IS")
 
     prix_bien = st.number_input("Prix du bien (€)", value=200000)
     part_terrain = st.slider("Part du terrain (%)", 0, 100, 15)
