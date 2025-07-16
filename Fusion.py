@@ -553,25 +553,25 @@ elif regime == "Micro-Bic":
     st.title("Simulation Micro BIC")
 
     st.subheader("Revenus")
-    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=850)
-    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 1)
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 0)
 
     st.subheader("Charges")
-    charges_copro = st.number_input("Charges de copropriété (€)", value=1000)
-    taxe_fonciere = st.number_input("Taxe foncière (€)", value=900)
-    frais_gestion = st.number_input("Frais de gestion locative (€)", value=500)
-    assurance_pno = st.number_input("Assurance PNO (€)", value=250)
-    assurance_gli = st.number_input("Assurance GLI (€)", value=300)
+    charges_copro = st.number_input("Charges de copropriété (€)", value=0)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=0)
+    frais_gestion = st.number_input("Frais de gestion locative (€)", value=0)
+    assurance_pno = st.number_input("Assurance PNO (€)", value=0)
+    assurance_gli = st.number_input("Assurance GLI (€)", value=0)
 
     st.subheader("Emprunt")
-    montant_emprunt = st.number_input("Montant emprunté (€)", value=150000)
+    montant_emprunt = st.number_input("Montant emprunté (€)", value=0)
     duree_annees = st.slider("Durée de l’emprunt (ans)", 5, 30, 20)
-    taux_interet = st.number_input("Taux d’intérêt (%)", value=2.0)
+    taux_interet = st.number_input("Taux d’intérêt (%)", value=3.0)
     taux_assurance = st.number_input("Taux assurance (%)", value=0.3)
     differe_mois = st.slider("Différé (mois)", 0, 24, 0)
 
     st.subheader("Fiscalité")
-    tmi = st.slider("TMI (%)", 0, 45, 30)
+    tmi = st.slider("TMI (%)", 11, 45, 30)
 
     if st.button("Lancer la simulation Micro BIC"):
         microbic = MicroBIC(
