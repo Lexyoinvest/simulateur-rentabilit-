@@ -7,7 +7,7 @@ st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", l
 st.title("Lexyo Simulateur de rentabilité immobilière")
 
 # Menu à gauche
-regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "SCI à l'IS"])
+regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "SCI à l'IS", "Micro-Bic"])
 
 # --------------------------------------------------------------------------------
 # CLASSE LMNP RÉEL
