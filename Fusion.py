@@ -443,3 +443,82 @@ elif regime == "SCI à l'IS":
         st.dataframe(sci.tableau_amortissement_emprunt())
         st.subheader("📑 Amortissements comptables")
         st.dataframe(sci.amortissements())
+elif regime == "Micro BIC":
+
+    @dataclass
+    class MicroBIC:
+        loyer_mensuel_hc: float
+        vacance_locative_mois: int
+        charges_copro: float
+        taxe_fonciere: float
+        frais_gestion: float
+        tmi: float
+        csg_crds: float = 17.2  # taux global CSG/CRDS
+        abattement: float = 0.5  # abattement forfaitaire Micro-BIC
+        plafond_microbic: float = 77700  # plafond micro-BIC
+
+        def revenus_annuels(self):
+            return self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+
+        def revenu_imposable(self):
+            return self.revenus_annuels() * (1 - self.abattement)
+
+        def impot_ir(self):
+            return self.revenu_imposable() * (self.tmi / 100)
+
+        def prelevements_sociaux(self):
+            return self.revenu_imposable() * (self.csg_crds / 100)
+
+        def charges_non_recup(self):
+            # 20% des charges copro + taxe foncière + gestion
+            return self.taxe_fonciere + self.frais_gestion + self.charges_copro * 0.2
+
+        def cashflow_annuel(self):
+            return self.revenus_annuels() - self.charges_non_recup() - self.impot_ir() - self.prelevements_sociaux()
+
+        def resultat_fiscal_annuel(self):
+            rows = []
+            revenu_brut = self.revenus_annuels()
+            for annee in range(1, 11):
+                revenu_imposable = self.revenu_imposable()
+                ir = self.impot_ir()
+                ps = self.prelevements_sociaux()
+                charges = self.charges_non_recup()
+                cashflow = self.cashflow_annuel()
+
+                rows.append({
+                    'Année': annee,
+                    'Revenus bruts': round(revenu_brut, 2),
+                    'Abattement 50%': round(revenu_brut * self.abattement, 2),
+                    'Revenu imposable': round(revenu_imposable, 2),
+                    'IR (TMI)': round(ir, 2),
+                    'Prélèvements sociaux (17.2%)': round(ps, 2),
+                    'Charges non récupérables': round(charges, 2),
+                    '💡 Remarque': "Charges non déductibles fiscalement",
+                    'Cashflow annuel (€)': round(cashflow, 2),
+                    'Cashflow mensuel (€)': round(cashflow / 12, 2)
+                })
+            return pd.DataFrame(rows)
+
+    # Interface utilisateur Micro BIC
+    st.title("Simulation Micro BIC")
+
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=850)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 1)
+    charges_copro = st.number_input("Charges de copropriété (€)", value=1000)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=900)
+    frais_gestion = st.number_input("Frais de gestion locative (€)", value=0)
+    tmi = st.slider("TMI (%)", 0, 45, 30)
+
+    if st.button("Lancer la simulation Micro BIC"):
+        microbic = MicroBIC(
+            loyer_mensuel_hc, vacance_locative_mois,
+            charges_copro, taxe_fonciere, frais_gestion, tmi
+        )
+
+        # Vérification du plafond
+        if microbic.revenus_annuels() > microbic.plafond_microbic:
+            st.warning(f"⚠️ Attention : les revenus annuels ({microbic.revenus_annuels():,.0f} €) dépassent le plafond du régime micro-BIC ({microbic.plafond_microbic:,.0f} €). Le régime réel est obligatoire.")
+
+        st.subheader("📆 Résultats Micro BIC sur 10 ans")
+        st.dataframe(microbic.resultat_fiscal_annuel())
