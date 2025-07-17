@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
-t.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
+st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
 # 🌈 Personnalisation globale des sliders (rose fluo)
 st.markdown("""
