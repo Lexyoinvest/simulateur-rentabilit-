@@ -4,32 +4,42 @@ import numpy as np
 import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
+
+# 🌈 Personnalisation globale des sliders (rose fluo)
 st.markdown("""
     <style>
-    /* 🌸 Couleur de la partie active de la barre du slider */
-    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
+    /* Couleur de la ligne remplie */
+    [data-baseweb="slider"] > div > div {
         background: #ff00ff !important;
     }
 
-    /* 🌸 Couleur de la bulle (thumb du slider) */
+    /* Couleur du cercle (thumb) */
     [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
-        border: 2px solid #ff00ff !important;
-        box-shadow: none !important;
+        border-color: #ff00ff !important;
     }
 
-    /* 🌸 Couleur du texte de la bulle */
-    [data-baseweb="slider"] span[role="slider"]::before {
-        color: #ff00ff !important;
-    }
-
-    /* 🫥 Masquer les carrés d'extrémité (track markers inutiles) */
-    [data-baseweb="slider"] > div > div:nth-child(1),
-    [data-baseweb="slider"] > div > div:nth-child(3) {
-        background: transparent !important;
+    /* Couleur de la portion active du slider */
+    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
+        background: #ff00ff !important;
     }
     </style>
 """, unsafe_allow_html=True)
+
+# 🎨 Titre avec Lexyo rose et Simulateur en dégradé
+st.markdown("""
+    <h1 style="font-size: 48px; text-align: center;">
+        <span style="color: #ff00ff; font-weight: bold;">Lexyo</span>
+        <span style="
+            background: linear-gradient(to right, #ff00ff, #000000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        "> Simulateur</span>
+        de rentabilité immobilière
+    </h1>
+""", unsafe_allow_html=True)
+
 
 
 # Menu à gauche
