@@ -4,7 +4,16 @@ import numpy as np
 import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
-st.title("Lexyo Simulateur de rentabilité immobilière")
+st.markdown("""
+    <h1 style="font-size: 48px; text-align: center;">
+        Lexyo <span style="
+            background: linear-gradient(to right, #ff00ff, #000000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        ">Simulateur</span> de rentabilité immobilière
+    </h1>
+""", unsafe_allow_html=True)
 
 # Menu à gauche
 regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "LMP réel", "SCI à l'IS", "SCI à l'IR", "SARL de famille", "Holding à l'IS", "Location nue", "Micro foncier", "Réel foncier"])
