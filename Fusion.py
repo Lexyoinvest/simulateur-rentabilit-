@@ -676,63 +676,95 @@ elif regime == "SCI à l'IR":
             return pd.DataFrame(rows)
 
         def resultat_fiscal_annuel(self):
-            df_amort = self.tableau_amortissement_emprunt()
-            interets = df_amort.groupby('Année')['Intérêts'].sum().to_dict()
-            assurances = df_amort.groupby('Année')['Assurance'].sum().to_dict()
-
+            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+            assurances = self.tableau_amortissement_emprunt().groupby('Année')['Assurance'].sum().to_dict()
             mensualite = self.mensualite_emprunt()
             results = []
-
-            deficit_foncier_reportable = 0.0
-            interets_non_deductibles_report = 0.0
+            deficit_reportable = 0.0
 
             for annee in range(1, 11):
                 revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
-
                 charges_reelles = (
                     self.charges_copro + self.assurance + self.assurance_gli +
                     self.taxe_fonciere + self.frais_entretien + self.frais_compta +
                     self.frais_bancaires + self.gestion_locative
                 )
                 charges_recup = self.charges_copro * 0.8
-
-                interet = interets.get(annee, 0.0) + interets_non_deductibles_report
+                interet = interets.get(annee, 0.0)
                 assurance = assurances.get(annee, 0.0)
 
-                total_charges_deductibles = charges_reelles + assurance
-                deficit_avant_interets = revenus - total_charges_deductibles
+                resultat_foncier = revenus - charges_reelles - interet - assurance
+                resultat_fiscal = resultat_foncier + deficit_reportable
 
-                if deficit_avant_interets >= 0:
-                    resultat_foncier = deficit_avant_interets - interets.get(annee, 0.0)
-                    interets_non_deductibles_report = 0.0
-                    deficit_foncier_reportable = 0.0
-                else:
-                    deficit_deductible = max(-deficit_avant_interets, 0)
-                    imputable_global = min(deficit_deductible, 10700)
-                    excedent = deficit_deductible - imputable_global
-                    interets_non_deductibles_report = interets.get(annee, 0.0) + excedent
-                    resultat_foncier = -imputable_global - interets.get(annee, 0.0)
-                    deficit_foncier_reportable = -excedent if excedent > 0 else 0
-
-                if resultat_foncier < 0:
+                if resultat_fiscal < 0:
                     ir = 0.0
+                    deficit_reportable = resultat_fiscal
                 else:
-                    ir = resultat_foncier * (self.tmi / 100)
+                    ir = resultat_fiscal * (self.tmi / 100)
+                    deficit_reportable = 0.0
 
-                cashflow = revenus - charges_reelles - mensualite * 12 - ir + charges_recup
+                cashflow_mensuel = (revenus - charges_reelles - ir - mensualite * 12 + charges_recup) / 12
 
                 results.append({
                     'Année': annee,
-                    'Revenus': round(revenus, 2),
-                    'Charges réelles': round(charges_reelles, 2),
-                    'Charges récupérables': round(charges_recup, 2),
-                    'Intérêts': round(interets.get(annee, 0.0), 2),
-                    'Assurance': round(assurance, 2),
-                    'Résultat foncier': round(resultat_foncier, 2),
-                    'Déficit foncier reportable': round(deficit_foncier_reportable, 2),
-                    'IR': round(ir, 2),
-                    'Cashflow mensuel (€)': round(cashflow / 12, 2)
+                    'Revenus': revenus,
+                    'Charges réelles': charges_reelles,
+                    'Charges récupérables': charges_recup,
+                    'Intérêts': interet,
+                    'Assurance': assurance,
+                    'Résultat foncier': resultat_foncier,
+                    'Résultat fiscal après report': resultat_fiscal,
+                    'Déficit reportable': deficit_reportable if deficit_reportable < 0 else 0.0,
+                    'Impôt sur le revenu (IR)': ir,
+                    'Cashflow mensuel (€)': round(cashflow_mensuel, 2)
                 })
 
             return pd.DataFrame(results)
+
+    # Interface utilisateur SCI à l’IR
+    st.title("Simulateur SCI à l’IR")
+
+    prix_bien = st.number_input("Prix du bien (€)", value=0)
+    part_terrain = st.slider("Part du terrain (%)", 0, 100, 15)
+    apport = st.number_input("Apport (€)", value=0)
+    frais_dossier = st.number_input("Frais de dossier (€)", value=0)
+    frais_agence = st.number_input("Frais d’agence (€)", value=0)
+    montant_travaux = st.number_input("Montant des travaux (€)", value=0)
+    frais_garantie = st.number_input("Frais de garantie (€)", value=0)
+    frais_tiers = st.number_input("Frais de tiers (€)", value=0)
+
+    duree_annees = st.slider("Durée du prêt (années)", 5, 30, 20)
+    taux_interet = st.number_input("Taux d’intérêt (%)", value=3.0)
+    taux_assurance = st.number_input("Taux d’assurance emprunteur (%)", value=0.3)
+    differe_mois = st.slider("Différé (mois)", 0, 24, 0)
+
+    charges_copro = st.number_input("Charges de copropriété (€)", value=0)
+    assurance = st.number_input("Assurance PNO (€)", value=0)
+    assurance_gli = st.number_input("Assurance GLI (€)", value=0)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=0)
+    frais_entretien = st.number_input("Frais d’entretien (€)", value=0)
+    frais_compta = st.number_input("Frais de comptabilité (€)", value=0)
+    frais_bancaires = st.number_input("Frais bancaires (€)", value=0)
+    gestion_locative = st.number_input("Gestion locative (€)", value=0)
+
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 0)
+    tmi = st.slider("TMI (Tranche Marginale d’Imposition en %)", 11, 45, 30)
+
+    if st.button("Lancer la simulation SCI à l’IR"):
+        sci_ir = SCIaIR(
+            prix_bien, part_terrain, apport, frais_dossier, frais_agence, montant_travaux,
+            frais_garantie, frais_tiers,
+            duree_annees, taux_interet, taux_assurance, differe_mois,
+            charges_copro, assurance, assurance_gli, taxe_fonciere,
+            frais_entretien, frais_compta, frais_bancaires, gestion_locative,
+            loyer_mensuel_hc, vacance_locative_mois, tmi
+        )
+
+        st.subheader("📆 Résultats SCI à l’IR sur 10 ans")
+        st.dataframe(sci_ir.resultat_fiscal_annuel())
+
+        st.subheader("📉 Tableau d’amortissement de l’emprunt")
+        st.dataframe(sci_ir.tableau_amortissement_emprunt())
+
 
