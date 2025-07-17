@@ -937,7 +937,171 @@ elif regime == "Location nue":
         st.dataframe(location.resultat_fiscal_annuel())
 
         st.subheader("📉 Tableau d’amortissement de l’emprunt")
-        st.dataframe(location.tableau_amortissement_emprunt())
+        st.dataframe(location.tableau_amortissement_emprunt()) 
+
+elif regime == "Micro foncier":
+
+    @dataclass
+    class MicroFoncier:
+        loyer_mensuel_hc: float
+        vacance_locative_mois: int
+        tmi: float
+
+        prix_bien: float
+        apport: float
+        frais_dossier: float
+        frais_agence: float
+        montant_travaux: float
+        frais_garantie: float
+        frais_tiers: float
+
+        duree_annees: int
+        taux_interet: float
+        taux_assurance: float
+        differe_mois: int
+
+        charges_copro: float
+        taxe_fonciere: float
+        frais_entretien: float
+        frais_bancaires: float
+        gestion_locative: float
+
+        frais_notaire_pct: float = 8.0
+        csg_crds: float = 17.2
+        abattement: float = 0.3
+        montant_emprunt: float = field(init=False)
+        frais_notaire: float = field(init=False)
+
+        def __post_init__(self):
+            self.frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
+            total_a_financer = (
+                self.prix_bien + self.frais_notaire + self.frais_agence +
+                self.frais_dossier + self.frais_garantie + self.frais_tiers + self.montant_travaux
+            )
+            self.montant_emprunt = max(0, total_a_financer - self.apport)
+
+        def mensualite_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            for _ in range(self.differe_mois):
+                capital += capital * tm
+            n = self.duree_annees * 12 - self.differe_mois
+            if n <= 0:
+                raise ValueError("Durée ou différé incohérents")
+            m_hors_assurance = capital * tm / (1 - (1 + tm) ** -n)
+            m_assurance = self.montant_emprunt * ta
+            return m_hors_assurance + m_assurance
+
+        def tableau_amortissement_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            capital_rest = capital
+            mensualite_hors_assurance = None
+            rows = []
+            for mois in range(1, self.duree_annees * 12 + 1):
+                if mois <= self.differe_mois:
+                    interets = capital_rest * tm
+                    principal = 0
+                    capital_rest += interets
+                else:
+                    if mensualite_hors_assurance is None:
+                        mensualite_hors_assurance = self.mensualite_emprunt() - capital * ta
+                    interets = capital_rest * tm
+                    principal = mensualite_hors_assurance - interets
+                    capital_rest -= principal
+                    if capital_rest < 0:
+                        principal += capital_rest
+                        capital_rest = 0
+                rows.append({
+                    'Mois': mois,
+                    'Année': (mois - 1) // 12 + 1,
+                    'Intérêts': interets,
+                    'Principal': principal,
+                    'Assurance': capital * ta,
+                    'Capital restant dû': capital_rest
+                })
+            return pd.DataFrame(rows)
+
+        def resultat_fiscal_annuel(self):
+            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+            assurances = self.tableau_amortissement_emprunt().groupby('Année')['Assurance'].sum().to_dict()
+            mensualite = self.mensualite_emprunt()
+
+            rows = []
+            for annee in range(1, 11):
+                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+                revenu_imposable = revenus * (1 - self.abattement)
+                ir = revenu_imposable * (self.tmi / 100)
+                ps = revenu_imposable * (self.csg_crds / 100)
+
+                charges_reelles = (
+                    self.charges_copro + self.taxe_fonciere + self.frais_entretien +
+                    self.frais_bancaires + self.gestion_locative
+                )
+                charges_recup = self.charges_copro * 0.8
+                interet = interets.get(annee, 0.0)
+                assurance = assurances.get(annee, 0.0)
+
+                cashflow = (revenus - charges_reelles - interet - assurance - ir - ps + charges_recup - mensualite * 12) / 12
+
+                rows.append({
+                    "Année": annee,
+                    "Revenus bruts": round(revenus, 2),
+                    "Revenu imposable (abattement 30%)": round(revenu_imposable, 2),
+                    "IR (TMI)": round(ir, 2),
+                    "Prélèvements sociaux (17.2%)": round(ps, 2),
+                    "Charges réelles": round(charges_reelles, 2),
+                    "Intérêts": round(interet, 2),
+                    "Assurance emprunt": round(assurance, 2),
+                    "Charges récupérables": round(charges_recup, 2),
+                    "Mensualité emprunt (annuelle)": round(mensualite * 12, 2),
+                    "Cashflow mensuel": round(cashflow, 2)
+                })
+
+            return pd.DataFrame(rows)
+
+    # Interface utilisateur Micro-Foncier
+    st.title("📦 Simulateur Micro-Foncier")
+
+    prix_bien = st.number_input("Prix du bien (€)", value=0)
+    apport = st.number_input("Apport (€)", value=0)
+    frais_dossier = st.number_input("Frais de dossier (€)", value=0)
+    frais_agence = st.number_input("Frais d’agence (€)", value=0)
+    montant_travaux = st.number_input("Montant des travaux (€)", value=0)
+    frais_garantie = st.number_input("Frais de garantie (€)", value=0)
+    frais_tiers = st.number_input("Frais de tiers (€)", value=0)
+
+    duree_annees = st.slider("Durée prêt (années)", 5, 30, 20)
+    taux_interet = st.number_input("Taux d’intérêt (%)", value=3.0)
+    taux_assurance = st.number_input("Taux assurance emprunteur (%)", value=0.3)
+    differe_mois = st.slider("Différé (mois)", 0, 24, 0)
+
+    charges_copro = st.number_input("Charges de copropriété (€)", value=0)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=0)
+    frais_entretien = st.number_input("Frais d’entretien (€)", value=0)
+    frais_bancaires = st.number_input("Frais bancaires (€)", value=0)
+    gestion_locative = st.number_input("Frais de gestion locative (€)", value=0)
+
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 1)
+    tmi = st.slider("TMI (Tranche Marginale d’Imposition en %)", 0, 45, 30)
+
+    if st.button("Lancer la simulation Micro-Foncier"):
+        micro = MicroFoncier(
+            loyer_mensuel_hc, vacance_locative_mois, tmi,
+            prix_bien, apport, frais_dossier, frais_agence, montant_travaux,
+            frais_garantie, frais_tiers,
+            duree_annees, taux_interet, taux_assurance, differe_mois,
+            charges_copro, taxe_fonciere, frais_entretien, frais_bancaires, gestion_locative
+        )
+
+        st.subheader("📊 Résultats Micro-Foncier sur 10 ans")
+        st.dataframe(micro.resultat_fiscal_annuel())
+        st.subheader("📉 Tableau d’amortissement de l’emprunt")
+        st.dataframe(micro.tableau_amortissement_emprunt())
+
 
 
 
