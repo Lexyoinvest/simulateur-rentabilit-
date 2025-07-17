@@ -7,7 +7,7 @@ st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", l
 st.title("Lexyo Simulateur de rentabilité immobilière")
 
 # Menu à gauche
-regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "SCI à l'IS", "SCI à l'IR"])
+regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "SCI à l'IS", "SCI à l'IR", "Location nue"])
 
 # --------------------------------------------------------------------------------
 # CLASSE LMNP RÉEL
@@ -763,6 +763,174 @@ elif regime == "SCI à l'IR":
 
         st.subheader("📆 Résultats SCI à l’IR sur 10 ans")
         st.dataframe(sci_ir.resultat_fiscal_annuel())
+        
+elif regime == "Location nue":
+
+    @dataclass
+    class LocationNue:
+        prix_bien: float
+        apport: float
+        frais_dossier: float
+        frais_agence: float
+        montant_travaux: float
+        frais_garantie: float
+        frais_tiers: float
+
+        duree_annees: int
+        taux_interet: float
+        taux_assurance: float
+        differe_mois: int
+
+        charges_copro: float
+        taxe_fonciere: float
+        assurance_pno: float
+        frais_entretien: float
+        frais_bancaires: float
+        gestion_locative: float
+
+        loyer_mensuel_hc: float
+        vacance_locative_mois: int
+        tmi: float
+
+        frais_notaire_pct: float = 8.0
+        montant_emprunt: float = field(init=False)
+        frais_notaire: float = field(init=False)
+
+        def __post_init__(self):
+            self.frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
+            total_a_financer = (
+                self.prix_bien + self.frais_notaire + self.frais_agence +
+                self.frais_dossier + self.frais_garantie + self.frais_tiers + self.montant_travaux
+            )
+            self.montant_emprunt = max(0, total_a_financer - self.apport)
+
+        def mensualite_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            for _ in range(self.differe_mois):
+                capital += capital * tm
+            n = self.duree_annees * 12 - self.differe_mois
+            if n <= 0:
+                raise ValueError("Durée ou différé incohérents")
+            m_hors_assurance = capital * tm / (1 - (1 + tm) ** -n)
+            m_assurance = self.montant_emprunt * ta
+            return m_hors_assurance + m_assurance
+
+        def tableau_amortissement_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            capital_rest = capital
+            mensualite_hors_assurance = None
+            rows = []
+            for mois in range(1, self.duree_annees * 12 + 1):
+                if mois <= self.differe_mois:
+                    interets = capital_rest * tm
+                    principal = 0
+                    capital_rest += interets
+                else:
+                    if mensualite_hors_assurance is None:
+                        mensualite_hors_assurance = self.mensualite_emprunt() - capital * ta
+                    interets = capital_rest * tm
+                    principal = mensualite_hors_assurance - interets
+                    capital_rest -= principal
+                    if capital_rest < 0:
+                        principal += capital_rest
+                        capital_rest = 0
+                rows.append({
+                    'Mois': mois,
+                    'Année': (mois - 1) // 12 + 1,
+                    'Intérêts': interets,
+                    'Principal': principal,
+                    'Assurance': capital * ta,
+                    'Capital restant dû': capital_rest
+                })
+            return pd.DataFrame(rows)
+
+        def resultat_fiscal_annuel(self):
+            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
+            assurances = self.tableau_amortissement_emprunt().groupby('Année')['Assurance'].sum().to_dict()
+            mensualite = self.mensualite_emprunt()
+            results = []
+            deficit_reportable = 0.0
+
+            for annee in range(1, 11):
+                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+                charges_reelles = (
+                    self.charges_copro + self.taxe_fonciere + self.assurance_pno +
+                    self.frais_entretien + self.frais_bancaires + self.gestion_locative
+                )
+                charges_recup = self.charges_copro * 0.8
+                interet = interets.get(annee, 0.0)
+                assurance = assurances.get(annee, 0.0)
+
+                resultat_foncier = revenus - charges_reelles - interet - assurance
+                resultat_fiscal = resultat_foncier + deficit_reportable
+
+                if resultat_fiscal < 0:
+                    ir = 0.0
+                    deficit_reportable = resultat_fiscal
+                else:
+                    ir = resultat_fiscal * (self.tmi / 100)
+                    deficit_reportable = 0.0
+
+                cashflow_mensuel = (revenus - charges_reelles - ir - mensualite * 12 + charges_recup) / 12
+
+                results.append({
+                    'Année': annee,
+                    'Revenus': revenus,
+                    'Charges réelles': charges_reelles,
+                    'Charges récupérables': charges_recup,
+                    'Intérêts': interet,
+                    'Assurance': assurance,
+                    'Résultat foncier': resultat_foncier,
+                    'Résultat fiscal après report': resultat_fiscal,
+                    'Déficit reportable': deficit_reportable if deficit_reportable < 0 else 0.0,
+                    'Impôt sur le revenu (IR)': ir,
+                    'Cashflow mensuel (€)': round(cashflow_mensuel, 2)
+                })
+
+            return pd.DataFrame(results)
+
+    # Interface utilisateur Location nue
+    st.title("Simulateur Location Nue")
+
+    prix_bien = st.number_input("Prix du bien (€)", value=0)
+    apport = st.number_input("Apport (€)", value=0)
+    frais_dossier = st.number_input("Frais de dossier (€)", value=0)
+    frais_agence = st.number_input("Frais d’agence (€)", value=0)
+    montant_travaux = st.number_input("Montant des travaux (€)", value=0)
+    frais_garantie = st.number_input("Frais de garantie (€)", value=0)
+    frais_tiers = st.number_input("Frais de tiers (€)", value=0)
+
+    duree_annees = st.slider("Durée du prêt (années)", 5, 30, 20)
+    taux_interet = st.number_input("Taux d’intérêt (%)", value=3.0)
+    taux_assurance = st.number_input("Taux d’assurance emprunteur (%)", value=0.3)
+    differe_mois = st.slider("Différé (mois)", 0, 24, 0)
+
+    charges_copro = st.number_input("Charges de copropriété (€)", value=0)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=0)
+    assurance_pno = st.number_input("Assurance PNO (€)", value=0)
+    frais_entretien = st.number_input("Frais d’entretien (€)", value=0)
+    frais_bancaires = st.number_input("Frais bancaires (€)", value=0)
+    gestion_locative = st.number_input("Gestion locative (€)", value=0)
+
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 0)
+    tmi = st.slider("TMI (Tranche Marginale d’Imposition en %)", 0, 45, 30)
+
+    if st.button("Lancer la simulation Location nue"):
+        location = LocationNue(
+            prix_bien, apport, frais_dossier, frais_agence, montant_travaux,
+            frais_garantie, frais_tiers,
+            duree_annees, taux_interet, taux_assurance, differe_mois,
+            charges_copro, taxe_fonciere, assurance_pno, frais_entretien,
+            frais_bancaires, gestion_locative,
+            loyer_mensuel_hc, vacance_locative_mois, tmi
+        )
+
+       
 
         st.subheader("📉 Tableau d’amortissement de l’emprunt")
         st.dataframe(sci_ir.tableau_amortissement_emprunt())
