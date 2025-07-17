@@ -1488,7 +1488,7 @@ elif regime == "SARL de famille":
     # Interface utilisateur SARL de famille
     st.title("Simulation SARL de Famille (IR)")
 
-    prix_bien = st.number_input("Prix du bien (€)", value=20)
+    prix_bien = st.number_input("Prix du bien (€)", value=0)
     part_terrain = st.number_input("Part du terrain (%)", value=10)
     apport = st.number_input("Apport (€)", value=0)
     frais_dossier = st.number_input("Frais de dossier (€)", value=0)
