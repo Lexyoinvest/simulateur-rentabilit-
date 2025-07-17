@@ -4,42 +4,39 @@ import numpy as np
 import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
-
-# 🌈 Personnalisation globale des sliders (rose fluo)
 st.markdown("""
     <style>
-    /* Couleur de la ligne remplie */
-    [data-baseweb="slider"] > div > div {
-        background: #ff00ff !important;
-    }
-
-    /* Couleur du cercle (thumb) */
-    [data-baseweb="slider"] span[role="slider"] {
-        background-color: #ff00ff !important;
-        border-color: #ff00ff !important;
-    }
-
-    /* Couleur de la portion active du slider */
+    /* 🌸 Barre active rose fluo */
     [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
         background: #ff00ff !important;
     }
+
+    /* 🌸 Bulle (le thumb) rose fluo */
+    [data-baseweb="slider"] span[role="slider"] {
+        background-color: #ff00ff !important;
+        border: none !important;
+        box-shadow: 0 0 0 2px #ff00ff33 !important;
+    }
+
+    /* 🌸 Couleur de la valeur (texte) à côté du slider */
+    [data-baseweb="slider"] span[role="slider"]::after {
+        color: #ff00ff !important;
+        font-weight: bold;
+    }
+
+    /* 🫥 Supprimer les extrémités grises (track-inactive left/right) */
+    [data-baseweb="slider"] div[aria-label="slider"] > div:nth-child(2),
+    [data-baseweb="slider"] div[aria-label="slider"] > div:nth-child(3) {
+        background-color: transparent !important;
+    }
+
+    /* 🎯 Décalage du titre vers la gauche */
+    h1 {
+        text-align: left !important;
+        margin-left: 3vw !important;
+    }
     </style>
 """, unsafe_allow_html=True)
-
-# 🎨 Titre avec Lexyo rose et Simulateur en dégradé
-st.markdown("""
-    <h1 style="font-size: 48px; text-align: center;">
-        <span style="color: #ff00ff; font-weight: bold;">Lexyo</span>
-        <span style="
-            background: linear-gradient(to right, #ff00ff, #000000);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: bold;
-        "> Simulateur</span>
-        de rentabilité immobilière
-    </h1>
-""", unsafe_allow_html=True)
-
 
 
 # Menu à gauche
