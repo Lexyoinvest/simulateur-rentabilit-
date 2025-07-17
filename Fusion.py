@@ -1661,7 +1661,7 @@ elif regime == "Réel foncier":
                     'Déficit imputé sur revenu global': -imputable_rg if imputable_rg < 0 else 0.0,
                     'Déficit reportable foncier': deficit_reportable_foncier if deficit_reportable_foncier < 0 else 0.0,
                     'Impôt (IR)': round(ir, 2),
-                    'Cashflow mensuel (€)': round(cashflow, 2)
+                    'Cashflow mensuel (€)': round(cashflow, 2) / 12
                 })
 
             return pd.DataFrame(results) 
