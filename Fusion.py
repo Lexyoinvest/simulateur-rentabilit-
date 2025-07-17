@@ -783,14 +783,13 @@ elif regime == "Location nue":
 
         charges_copro: float
         taxe_fonciere: float
-        assurance_pno: float
         frais_entretien: float
         frais_bancaires: float
         gestion_locative: float
 
         loyer_mensuel_hc: float
         vacance_locative_mois: int
-        tmi: float
+        tmi: float  # Tranche marginale d'imposition
 
         frais_notaire_pct: float = 8.0
         montant_emprunt: float = field(init=False)
@@ -849,23 +848,28 @@ elif regime == "Location nue":
             return pd.DataFrame(rows)
 
         def resultat_fiscal_annuel(self):
-            interets = self.tableau_amortissement_emprunt().groupby('Année')['Intérêts'].sum().to_dict()
-            assurances = self.tableau_amortissement_emprunt().groupby('Année')['Assurance'].sum().to_dict()
+            amort_table = self.tableau_amortissement_emprunt()
+            interets = amort_table.groupby('Année')['Intérêts'].sum().to_dict()
+            assurances = amort_table.groupby('Année')['Assurance'].sum().to_dict()
             mensualite = self.mensualite_emprunt()
             results = []
             deficit_reportable = 0.0
 
             for annee in range(1, 11):
                 revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
-                charges_reelles = (
-                    self.charges_copro + self.taxe_fonciere + self.assurance_pno +
-                    self.frais_entretien + self.frais_bancaires + self.gestion_locative
+
+                charges_non_recup = (
+                    self.taxe_fonciere + self.frais_entretien +
+                    self.frais_bancaires + self.gestion_locative +
+                    self.charges_copro * 0.2  # 20% non récupérables
                 )
-                charges_recup = self.charges_copro * 0.8
+
+                charges_recup = self.charges_copro * 0.8  # 80% récupérables
+
                 interet = interets.get(annee, 0.0)
                 assurance = assurances.get(annee, 0.0)
 
-                resultat_foncier = revenus - charges_reelles - interet - assurance
+                resultat_foncier = revenus - charges_non_recup - interet - assurance
                 resultat_fiscal = resultat_foncier + deficit_reportable
 
                 if resultat_fiscal < 0:
@@ -875,49 +879,48 @@ elif regime == "Location nue":
                     ir = resultat_fiscal * (self.tmi / 100)
                     deficit_reportable = 0.0
 
-                cashflow_mensuel = (revenus - charges_reelles - ir - mensualite * 12 + charges_recup) / 12
+                cashflow_mensuel = (revenus - charges_non_recup - ir - mensualite * 12 + charges_recup) / 12
 
                 results.append({
                     'Année': annee,
                     'Revenus': revenus,
-                    'Charges réelles': charges_reelles,
-                    'Charges récupérables': charges_recup,
-                    'Intérêts': interet,
-                    'Assurance': assurance,
-                    'Résultat foncier': resultat_foncier,
-                    'Résultat fiscal après report': resultat_fiscal,
-                    'Déficit reportable': deficit_reportable if deficit_reportable < 0 else 0.0,
-                    'Impôt sur le revenu (IR)': ir,
+                    'Charges non récupérables': round(charges_non_recup, 2),
+                    'Charges récupérables': round(charges_recup, 2),
+                    'Intérêts': round(interet, 2),
+                    'Assurance': round(assurance, 2),
+                    'Résultat foncier': round(resultat_foncier, 2),
+                    'Résultat fiscal après report': round(resultat_fiscal, 2),
+                    'Déficit reportable': round(deficit_reportable, 2) if deficit_reportable < 0 else 0.0,
+                    'IR': round(ir, 2),
                     'Cashflow mensuel (€)': round(cashflow_mensuel, 2)
                 })
 
             return pd.DataFrame(results)
 
-    # Interface utilisateur Location nue
-    st.title("Simulateur Location Nue")
+    # Interface utilisateur Location Nue
+    st.title("🏡 Simulateur Location Nue")
 
-    prix_bien = st.number_input("Prix du bien (€)", value=0)
-    apport = st.number_input("Apport (€)", value=0)
-    frais_dossier = st.number_input("Frais de dossier (€)", value=0)
-    frais_agence = st.number_input("Frais d’agence (€)", value=0)
-    montant_travaux = st.number_input("Montant des travaux (€)", value=0)
-    frais_garantie = st.number_input("Frais de garantie (€)", value=0)
-    frais_tiers = st.number_input("Frais de tiers (€)", value=0)
+    prix_bien = st.number_input("Prix du bien (€)", value=200000)
+    apport = st.number_input("Apport (€)", value=20000)
+    frais_dossier = st.number_input("Frais de dossier (€)", value=1000)
+    frais_agence = st.number_input("Frais d’agence (€)", value=5000)
+    montant_travaux = st.number_input("Montant des travaux (€)", value=15000)
+    frais_garantie = st.number_input("Frais de garantie (€)", value=1000)
+    frais_tiers = st.number_input("Frais de tiers (€)", value=500)
 
     duree_annees = st.slider("Durée du prêt (années)", 5, 30, 20)
-    taux_interet = st.number_input("Taux d’intérêt (%)", value=3.0)
+    taux_interet = st.number_input("Taux d’intérêt (%)", value=2.0)
     taux_assurance = st.number_input("Taux d’assurance emprunteur (%)", value=0.3)
     differe_mois = st.slider("Différé (mois)", 0, 24, 0)
 
-    charges_copro = st.number_input("Charges de copropriété (€)", value=0)
-    taxe_fonciere = st.number_input("Taxe foncière (€)", value=0)
-    assurance_pno = st.number_input("Assurance PNO (€)", value=0)
-    frais_entretien = st.number_input("Frais d’entretien (€)", value=0)
-    frais_bancaires = st.number_input("Frais bancaires (€)", value=0)
+    charges_copro = st.number_input("Charges de copropriété (€)", value=1000)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=900)
+    frais_entretien = st.number_input("Frais d’entretien (€)", value=400)
+    frais_bancaires = st.number_input("Frais bancaires (€)", value=100)
     gestion_locative = st.number_input("Gestion locative (€)", value=0)
 
-    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
-    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 0)
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=850)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 1)
     tmi = st.slider("TMI (Tranche Marginale d’Imposition en %)", 0, 45, 30)
 
     if st.button("Lancer la simulation Location nue"):
@@ -925,14 +928,16 @@ elif regime == "Location nue":
             prix_bien, apport, frais_dossier, frais_agence, montant_travaux,
             frais_garantie, frais_tiers,
             duree_annees, taux_interet, taux_assurance, differe_mois,
-            charges_copro, taxe_fonciere, assurance_pno, frais_entretien,
+            charges_copro, taxe_fonciere, frais_entretien,
             frais_bancaires, gestion_locative,
             loyer_mensuel_hc, vacance_locative_mois, tmi
         )
 
-       
+        st.subheader("📆 Résultats Location nue sur 10 ans")
+        st.dataframe(location.resultat_fiscal_annuel())
 
         st.subheader("📉 Tableau d’amortissement de l’emprunt")
-        st.dataframe(sci_ir.tableau_amortissement_emprunt())
+        st.dataframe(location.tableau_amortissement_emprunt())
+
 
 
