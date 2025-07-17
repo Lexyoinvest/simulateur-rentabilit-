@@ -1057,13 +1057,13 @@ elif regime == "Micro foncier":
                     "Assurance emprunt": round(assurance, 2),
                     "Charges récupérables": round(charges_recup, 2),
                     "Mensualité emprunt (annuelle)": round(mensualite * 12, 2),
-                    "Cashflow mensuel": round(cashflow, 2)
+                    "Cashflow mensuel": round(cashflow, 2) / 12
                 })
 
             return pd.DataFrame(rows)
 
     # Interface utilisateur Micro-Foncier
-    st.title("📦 Simulateur Micro-Foncier")
+    st.title("Simulateur Micro-Foncier")
 
     prix_bien = st.number_input("Prix du bien (€)", value=0)
     apport = st.number_input("Apport (€)", value=0)
