@@ -7,7 +7,7 @@ st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", l
 st.title("Lexyo Simulateur de rentabilité immobilière")
 
 # Menu à gauche
-regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "SCI à l'IS", "SCI à l'IR", "Location nue", "Micro foncier"])
+regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "LMP réel", "SCI à l'IS", "SCI à l'IR", "Location nue", "Micro foncier"])
 
 # --------------------------------------------------------------------------------
 # CLASSE LMNP RÉEL
@@ -1102,6 +1102,226 @@ elif regime == "Micro foncier":
         st.subheader("📉 Tableau d’amortissement de l’emprunt")
         st.dataframe(micro.tableau_amortissement_emprunt())
 
+elif regime == "LMP réel":
+
+    @dataclass
+    class LMPReel:
+        prix_bien: float
+        part_terrain: float
+        apport: float
+        frais_dossier: float
+        frais_agence: float
+        montant_travaux: float
+        frais_garantie: float
+        frais_tiers: float
+        mobilier: float
+
+        duree_annees: int
+        taux_interet: float
+        taux_assurance: float
+        differe_mois: int
+
+        charges_copro: float
+        assurance: float
+        assurance_gli: float
+        taxe_fonciere: float
+        frais_entretien: float
+        frais_compta: float
+        frais_bancaires: float
+        gestion_locative: float
+        loyer_mensuel_hc: float
+        vacance_locative_mois: int
+        tmi: float
+
+        duree_amort_bati: int
+        duree_amort_travaux: int
+        duree_amort_mobilier: int
+        duree_amort_frais: int
+
+        frais_notaire_pct: float = 8.0
+        montant_emprunt: float = field(init=False)
+        frais_notaire: float = field(init=False)
+
+        def __post_init__(self):
+            self.frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
+            total_a_financer = (
+                self.prix_bien + self.frais_notaire + self.frais_agence +
+                self.frais_dossier + self.frais_garantie + self.frais_tiers + self.montant_travaux
+            )
+            self.montant_emprunt = max(0, total_a_financer - self.apport)
+
+        def mensualite_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            for _ in range(self.differe_mois):
+                capital += capital * tm
+            n = self.duree_annees * 12 - self.differe_mois
+            if n <= 0:
+                raise ValueError("Durée ou différé incohérents")
+            m_hors_assurance = capital * tm / (1 - (1 + tm) ** -n)
+            m_assurance = self.montant_emprunt * ta
+            return m_hors_assurance + m_assurance
+
+        def tableau_amortissement_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            capital_rest = capital
+            mensualite_hors_assurance = None
+            rows = []
+            for mois in range(1, self.duree_annees * 12 + 1):
+                if mois <= self.differe_mois:
+                    interets = capital_rest * tm
+                    principal = 0
+                    capital_rest += interets
+                else:
+                    if mensualite_hors_assurance is None:
+                        mensualite_hors_assurance = self.mensualite_emprunt() - capital * ta
+                    interets = capital_rest * tm
+                    principal = mensualite_hors_assurance - interets
+                    capital_rest -= principal
+                    if capital_rest < 0:
+                        principal += capital_rest
+                        capital_rest = 0
+                rows.append({
+                    'Mois': mois,
+                    'Année': (mois - 1) // 12 + 1,
+                    'Intérêts': interets,
+                    'Principal': principal,
+                    'Assurance': capital * ta,
+                    'Capital restant dû': capital_rest
+                })
+            return pd.DataFrame(rows)
+
+        def amortissements(self):
+            valeur_bati = self.prix_bien * (1 - self.part_terrain / 100)
+            rows = []
+            for annee in range(1, 11):
+                bati = valeur_bati / self.duree_amort_bati if annee <= self.duree_amort_bati else 0
+                mobilier = self.mobilier / self.duree_amort_mobilier if annee <= self.duree_amort_mobilier else 0
+                travaux = self.montant_travaux / self.duree_amort_travaux if annee <= self.duree_amort_travaux else 0
+                frais = (self.frais_dossier + self.frais_agence + self.frais_garantie + self.frais_tiers) / self.duree_amort_frais if annee <= self.duree_amort_frais else 0
+                total = bati + mobilier + travaux + frais
+                rows.append({
+                    'Année': annee,
+                    'Amortissement Bâti': bati,
+                    'Amortissement Mobilier': mobilier,
+                    'Amortissement Travaux': travaux,
+                    'Amortissement Frais': frais,
+                    'Total Amortissement': total
+                })
+            return pd.DataFrame(rows)
+
+        def resultat_fiscal_annuel(self):
+            amort = self.amortissements().set_index('Année')['Total Amortissement'].to_dict()
+            amort_table = self.tableau_amortissement_emprunt()
+            interets = amort_table.groupby('Année')['Intérêts'].sum().to_dict()
+            assurances = amort_table.groupby('Année')['Assurance'].sum().to_dict()
+
+            mensualite = self.mensualite_emprunt()
+            results = []
+            deficit_reportable = 0.0
+
+            for annee in range(1, 11):
+                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+                charges_reelles = (
+                    self.charges_copro + self.assurance + self.assurance_gli +
+                    self.taxe_fonciere + self.frais_entretien + self.frais_compta +
+                    self.frais_bancaires + self.gestion_locative
+                )
+                charges_recup = self.charges_copro * 0.8
+                interet = interets.get(annee, 0.0)
+                assurance = assurances.get(annee, 0.0)
+                dotation = amort.get(annee, 0.0)
+
+                resultat_brut = revenus - charges_reelles - interet - assurance - dotation
+                resultat_net = resultat_brut + deficit_reportable
+
+                if resultat_net < 0:
+                    ir = 0.0
+                    ssi = 0.0
+                    deficit_reportable = resultat_net
+                else:
+                    ir = resultat_net * (self.tmi / 100)
+                    ssi = resultat_net * 0.40
+                    deficit_reportable = 0.0
+
+                cashflow_mensuel = (revenus - charges_reelles - ir - ssi - mensualite * 12 + charges_recup) / 12
+
+                results.append({
+                    'Année': annee,
+                    'Revenus': revenus,
+                    'Charges réelles': charges_reelles,
+                    'Charges récupérables': charges_recup,
+                    'Intérêts': interet,
+                    'Assurance': assurance,
+                    'Amortissements': dotation,
+                    'Résultat fiscal brut': resultat_brut,
+                    'Résultat fiscal net': resultat_net,
+                    'Déficit reportable': deficit_reportable if deficit_reportable < 0 else 0.0,
+                    'IR (TMI)': round(ir, 2),
+                    'Cotisations sociales (SSI)': round(ssi, 2),
+                    'Cashflow mensuel (€)': round(cashflow_mensuel, 2)
+                })
+
+            return pd.DataFrame(results)
+
+    # Interface utilisateur LMP réel
+    st.title("Simulateur LMP réel")
+
+    prix_bien = st.number_input("Prix du bien (€)", value=200000)
+    part_terrain = st.slider("Part du terrain (%)", 0, 50, 20)
+    apport = st.number_input("Apport (€)", value=20000)
+    frais_dossier = st.number_input("Frais de dossier (€)", value=1000)
+    frais_agence = st.number_input("Frais d’agence (€)", value=5000)
+    montant_travaux = st.number_input("Montant des travaux (€)", value=20000)
+    frais_garantie = st.number_input("Frais de garantie (€)", value=1000)
+    frais_tiers = st.number_input("Frais de tiers (€)", value=500)
+    mobilier = st.number_input("Mobilier (€)", value=7000)
+
+    duree_annees = st.slider("Durée du prêt (années)", 5, 30, 20)
+    taux_interet = st.number_input("Taux d’intérêt (%)", value=2.0)
+    taux_assurance = st.number_input("Taux assurance emprunteur (%)", value=0.3)
+    differe_mois = st.slider("Différé (mois)", 0, 24, 0)
+
+    charges_copro = st.number_input("Charges de copropriété (€)", value=1000)
+    assurance = st.number_input("Assurance propriétaire (€)", value=250)
+    assurance_gli = st.number_input("Assurance GLI (€)", value=300)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=900)
+    frais_entretien = st.number_input("Frais d’entretien (€)", value=500)
+    frais_compta = st.number_input("Frais de comptabilité (€)", value=600)
+    frais_bancaires = st.number_input("Frais bancaires (€)", value=100)
+    gestion_locative = st.number_input("Frais de gestion locative (€)", value=0)
+
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=1000)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 1)
+    tmi = st.slider("TMI (Tranche Marginale d’Imposition en %)", 0, 45, 30)
+
+    duree_amort_bati = st.slider("Durée amortissement bâti (années)", 20, 50, 30)
+    duree_amort_travaux = st.slider("Durée amortissement travaux (années)", 5, 20, 10)
+    duree_amort_mobilier = st.slider("Durée amortissement mobilier (années)", 5, 15, 7)
+    duree_amort_frais = st.slider("Durée amortissement frais (années)", 5, 15, 10)
+
+    if st.button("Lancer la simulation LMP réel"):
+        lmp = LMPReel(
+            prix_bien, part_terrain, apport, frais_dossier, frais_agence, montant_travaux,
+            frais_garantie, frais_tiers, mobilier,
+            duree_annees, taux_interet, taux_assurance, differe_mois,
+            charges_copro, assurance, assurance_gli, taxe_fonciere, frais_entretien,
+            frais_compta, frais_bancaires, gestion_locative,
+            loyer_mensuel_hc, vacance_locative_mois, tmi,
+            duree_amort_bati, duree_amort_travaux, duree_amort_mobilier, duree_amort_frais
+        )
+
+        st.subheader("📊 Résultats LMP réel sur 10 ans")
+        st.dataframe(lmp.resultat_fiscal_annuel())
+
+        st.subheader("📉 Tableau d’amortissement de l’emprunt")
+        st.dataframe(lmp.tableau_amortissement_emprunt())
+
+        st.subheader("📑 Tableau des amortissements comptables")
+        st.dataframe(lmp.amortissements())
 
 
 
