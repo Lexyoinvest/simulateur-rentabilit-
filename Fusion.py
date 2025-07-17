@@ -586,4 +586,153 @@ elif regime == "LMNP Micro-Bic":
             st.warning(f"⚠️ Revenus bruts annuels ({microbic.revenus_annuels():,.0f} €) dépassent le plafond micro-BIC ({microbic.plafond_microbic:,.0f} €). Basculer vers le régime réel.")
 
         st.subheader("📊 Résultats sur 10 ans")
-        st.dataframe(microbic.resultat_fiscal_annuel())
+        st.dataframe(microbic.resultat_fiscal_annuel()) 
+
+elif regime == "SCI à l'IR":
+
+    @dataclass
+    class SCIaIR:
+        prix_bien: float
+        part_terrain: float
+        apport: float
+        frais_dossier: float
+        frais_agence: float
+        montant_travaux: float
+        frais_garantie: float
+        frais_tiers: float
+
+        duree_annees: int
+        taux_interet: float
+        taux_assurance: float
+        differe_mois: int
+
+        charges_copro: float
+        assurance: float
+        assurance_gli: float
+        taxe_fonciere: float
+        frais_entretien: float
+        frais_compta: float
+        frais_bancaires: float
+        gestion_locative: float
+
+        loyer_mensuel_hc: float
+        vacance_locative_mois: int
+        tmi: float
+
+        frais_notaire_pct: float = 8.0
+        montant_emprunt: float = field(init=False)
+        frais_notaire: float = field(init=False)
+
+        def __post_init__(self):
+            self.frais_notaire = self.prix_bien * self.frais_notaire_pct / 100
+            total_a_financer = (
+                self.prix_bien + self.frais_notaire + self.frais_agence +
+                self.frais_dossier + self.frais_garantie + self.frais_tiers + self.montant_travaux
+            )
+            self.montant_emprunt = max(0, total_a_financer - self.apport)
+
+        def mensualite_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            for _ in range(self.differe_mois):
+                capital += capital * tm
+            n = self.duree_annees * 12 - self.differe_mois
+            if n <= 0:
+                raise ValueError("Durée ou différé incohérents")
+            m_hors_assurance = capital * tm / (1 - (1 + tm) ** -n)
+            m_assurance = self.montant_emprunt * ta
+            return m_hors_assurance + m_assurance
+
+        def tableau_amortissement_emprunt(self):
+            tm = self.taux_interet / 100 / 12
+            ta = self.taux_assurance / 100 / 12
+            capital = self.montant_emprunt
+            capital_rest = capital
+            mensualite_hors_assurance = None
+            rows = []
+            for mois in range(1, self.duree_annees * 12 + 1):
+                if mois <= self.differe_mois:
+                    interets = capital_rest * tm
+                    principal = 0
+                    capital_rest += interets
+                else:
+                    if mensualite_hors_assurance is None:
+                        mensualite_hors_assurance = self.mensualite_emprunt() - capital * ta
+                    interets = capital_rest * tm
+                    principal = mensualite_hors_assurance - interets
+                    capital_rest -= principal
+                    if capital_rest < 0:
+                        principal += capital_rest
+                        capital_rest = 0
+                rows.append({
+                    'Mois': mois,
+                    'Année': (mois - 1) // 12 + 1,
+                    'Intérêts': interets,
+                    'Principal': principal,
+                    'Assurance': capital * ta,
+                    'Capital restant dû': capital_rest
+                })
+            return pd.DataFrame(rows)
+
+        def resultat_fiscal_annuel(self):
+            df_amort = self.tableau_amortissement_emprunt()
+            interets = df_amort.groupby('Année')['Intérêts'].sum().to_dict()
+            assurances = df_amort.groupby('Année')['Assurance'].sum().to_dict()
+
+            mensualite = self.mensualite_emprunt()
+            results = []
+
+            deficit_foncier_reportable = 0.0
+            interets_non_deductibles_report = 0.0
+
+            for annee in range(1, 11):
+                revenus = self.loyer_mensuel_hc * (12 - self.vacance_locative_mois)
+
+                charges_reelles = (
+                    self.charges_copro + self.assurance + self.assurance_gli +
+                    self.taxe_fonciere + self.frais_entretien + self.frais_compta +
+                    self.frais_bancaires + self.gestion_locative
+                )
+                charges_recup = self.charges_copro * 0.8
+
+                interet = interets.get(annee, 0.0) + interets_non_deductibles_report
+                assurance = assurances.get(annee, 0.0)
+
+                total_charges_deductibles = charges_reelles + assurance
+                deficit_avant_interets = revenus - total_charges_deductibles
+
+                if deficit_avant_interets >= 0:
+                    resultat_foncier = deficit_avant_interets - interets.get(annee, 0.0)
+                    interets_non_deductibles_report = 0.0
+                    deficit_foncier_reportable = 0.0
+                else:
+                    deficit_deductible = max(-deficit_avant_interets, 0)
+                    imputable_global = min(deficit_deductible, 10700)
+                    excedent = deficit_deductible - imputable_global
+                    interets_non_deductibles_report = interets.get(annee, 0.0) + excedent
+                    resultat_foncier = -imputable_global - interets.get(annee, 0.0)
+                    deficit_foncier_reportable = -excedent if excedent > 0 else 0
+
+                if resultat_foncier < 0:
+                    ir = 0.0
+                else:
+                    ir = resultat_foncier * (self.tmi / 100)
+
+                cashflow = revenus - charges_reelles - mensualite * 12 - ir + charges_recup
+
+                results.append({
+                    'Année': annee,
+                    'Revenus': round(revenus, 2),
+                    'Charges réelles': round(charges_reelles, 2),
+                    'Charges récupérables': round(charges_recup, 2),
+                    'Intérêts': round(interets.get(annee, 0.0), 2),
+                    'Assurance': round(assurance, 2),
+                    'Résultat foncier': round(resultat_foncier, 2),
+                    'Déficit foncier reportable': round(deficit_foncier_reportable, 2),
+                    'IR': round(ir, 2),
+                    'Cashflow mensuel (€)': round(cashflow / 12, 2)
+                })
+
+            return pd.DataFrame(results)
+
