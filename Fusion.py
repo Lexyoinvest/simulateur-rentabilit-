@@ -5,6 +5,27 @@ import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 st.markdown("""
+    <style>
+    /* Couleur de la ligne remplie */
+    [data-baseweb="slider"] > div > div {
+        background: #ff00ff !important;
+    }
+
+    /* Couleur du cercle (thumb) */
+    [data-baseweb="slider"] span[role="slider"] {
+        background-color: #ff00ff !important;
+        border-color: #ff00ff !important;
+    }
+
+    /* Couleur de la portion active du slider */
+    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
+        background: #ff00ff !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 🎨 Titre avec Lexyo rose et Simulateur en dégradé
+st.markdown("""
     <h1 style="font-size: 48px; text-align: center;">
         <span style="color: #ff00ff; font-weight: bold;">Lexyo</span>
         <span style="
@@ -16,6 +37,7 @@ st.markdown("""
         de rentabilité immobilière
     </h1>
 """, unsafe_allow_html=True)
+
 
 # Menu à gauche
 regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "LMP réel", "SCI à l'IS", "SCI à l'IR", "SARL de famille", "Holding à l'IS", "Location nue", "Micro foncier", "Réel foncier"])
