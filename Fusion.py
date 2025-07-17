@@ -898,30 +898,30 @@ elif regime == "Location nue":
             return pd.DataFrame(results)
 
     # Interface utilisateur Location Nue
-    st.title("🏡 Simulateur Location Nue")
+    st.title("Simulateur Location Nue")
 
-    prix_bien = st.number_input("Prix du bien (€)", value=200000)
-    apport = st.number_input("Apport (€)", value=20000)
-    frais_dossier = st.number_input("Frais de dossier (€)", value=1000)
-    frais_agence = st.number_input("Frais d’agence (€)", value=5000)
-    montant_travaux = st.number_input("Montant des travaux (€)", value=15000)
-    frais_garantie = st.number_input("Frais de garantie (€)", value=1000)
-    frais_tiers = st.number_input("Frais de tiers (€)", value=500)
+    prix_bien = st.number_input("Prix du bien (€)", value=0)
+    apport = st.number_input("Apport (€)", value=0)
+    frais_dossier = st.number_input("Frais de dossier (€)", value=0)
+    frais_agence = st.number_input("Frais d’agence (€)", value=0)
+    montant_travaux = st.number_input("Montant des travaux (€)", value=0)
+    frais_garantie = st.number_input("Frais de garantie (€)", value=0)
+    frais_tiers = st.number_input("Frais de tiers (€)", value=0)
 
     duree_annees = st.slider("Durée du prêt (années)", 5, 30, 20)
-    taux_interet = st.number_input("Taux d’intérêt (%)", value=2.0)
+    taux_interet = st.number_input("Taux d’intérêt (%)", value=3.0)
     taux_assurance = st.number_input("Taux d’assurance emprunteur (%)", value=0.3)
     differe_mois = st.slider("Différé (mois)", 0, 24, 0)
 
-    charges_copro = st.number_input("Charges de copropriété (€)", value=1000)
-    taxe_fonciere = st.number_input("Taxe foncière (€)", value=900)
-    frais_entretien = st.number_input("Frais d’entretien (€)", value=400)
-    frais_bancaires = st.number_input("Frais bancaires (€)", value=100)
+    charges_copro = st.number_input("Charges de copropriété (€)", value=0)
+    taxe_fonciere = st.number_input("Taxe foncière (€)", value=0)
+    frais_entretien = st.number_input("Frais d’entretien (€)", value=0)
+    frais_bancaires = st.number_input("Frais bancaires (€)", value=0)
     gestion_locative = st.number_input("Gestion locative (€)", value=0)
 
-    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=850)
-    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 1)
-    tmi = st.slider("TMI (Tranche Marginale d’Imposition en %)", 0, 45, 30)
+    loyer_mensuel_hc = st.number_input("Loyer mensuel HC (€)", value=0)
+    vacance_locative_mois = st.slider("Vacance locative (mois)", 0, 12, 0)
+    tmi = st.slider("TMI (Tranche Marginale d’Imposition en %)", 11, 45, 30)
 
     if st.button("Lancer la simulation Location nue"):
         location = LocationNue(
