@@ -3,8 +3,9 @@ from dataclasses import dataclass, field
 import numpy as np
 import pandas as pd
 
-st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
+t.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
+# 🌈 Personnalisation globale des sliders (rose fluo)
 st.markdown("""
     <style>
     /* Couleur de la ligne remplie */
@@ -25,14 +26,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-    /* 🎯 Décalage du titre vers la gauche */
-    h1 {
-        text-align: left !important;
-        margin-left: 3vw !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # 🎨 Titre avec Lexyo rose et Simulateur en dégradé
 st.markdown("""
     <h1 style="font-size: 48px; text-align: center;">
@@ -46,7 +39,6 @@ st.markdown("""
         de rentabilité immobilière
     </h1>
 """, unsafe_allow_html=True)
-
 
 # Menu à gauche
 regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "LMP réel", "SCI à l'IS", "SCI à l'IR", "SARL de famille", "Holding à l'IS", "Location nue", "Micro foncier", "Réel foncier"])
