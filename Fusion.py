@@ -1667,7 +1667,7 @@ elif regime == "Réel foncier":
             return pd.DataFrame(results) 
     
     # Interface utilisateur – Régime Réel Foncier
-    st.title("📘 Simulateur Réel Foncier")
+    st.title("Simulateur Réel Foncier")
 
     prix_bien = st.number_input("Prix du bien (€)", value=0)
     apport = st.number_input("Apport (€)", value=0)
