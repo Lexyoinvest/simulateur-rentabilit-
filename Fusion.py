@@ -21,9 +21,9 @@ st.markdown("""
         padding-left: 1rem;
     }
 
-    /* Sliders : ligne active rose fluo (VÉRIFIÉ) */
-    [data-baseweb="slider"] > div > div > div:first-child {
-        background-color: #ff00ff !important;
+    /* Couleur de la portion active du slider */
+    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
+        background: #ff00ff !important;
     }
 
     /* Sliders : cercle (thumb) rose fluo */
