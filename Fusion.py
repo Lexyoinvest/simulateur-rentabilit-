@@ -3,55 +3,41 @@ from dataclasses import dataclass, field
 import pandas as pd
 import numpy as np
 
-st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
-
-# ✅ Personnalisation CSS globale des sliders + titres
 st.markdown("""
-    <style>
-    /* Alignement à gauche pour tous les titres */
-    h1, h2 {
-        text-align: left !important;
-        padding-left: 1rem;
-    }
+<style>
+/* Alignement à gauche des titres */
+h1, h2 {
+    text-align: left !important;
+    padding-left: 1rem;
+}
 
-    /* Titre Lexyo (rose) + Simulateur (dégradé) */
-    .main-title {
-        font-size: 48px;
-        font-weight: bold;
-        padding-left: 1rem;
-    }
+/* Titre Lexyo (rose) + Simulateur (dégradé) */
+.main-title {
+    font-size: 48px;
+    font-weight: bold;
+    padding-left: 1rem;
+}
 
-    /* ✅ Barre active des sliders en rose fluo */
-    [data-testid="stSlider"] > div > div > div:nth-child(1) {
-        background: #ff00ff !important;
-    }
+/* ✅ Barre active du slider (partie gauche) en rose fluo */
+[data-testid="stSlider"] > div > div > div:nth-child(1) > div {
+    background-color: #ff00ff !important;
+}
 
-        /* Sliders : cercle (thumb) rose */
-    [data-baseweb="slider"] span[role="slider"] {
-        background-color: #ff00ff !important;
-        border: 2px solid #ff00ff !important;
-    }
+/* ✅ Slider thumb (la boule) en rose fluo */
+[data-testid="stSlider"] span[role="slider"] {
+    background-color: #ff00ff !important;
+    border: 2px solid #ff00ff !important;
+}
 
-    /* Sliders : valeurs min et max en noir sur blanc sans fond coloré */
-    [data-baseweb="slider"] > div > div > div > div {
-        background-color: white !important;
-        color: black !important;
-        border: none !important;
-        box-shadow: none !important; 
-           }
-    </style>
-""", unsafe_allow_html=True)
-
-# ✅ Titre principal stylisé
-st.markdown("""
-    <h1 class="main-title">
-        <span style="color: #ff00ff;">Lexyo</span>
-        <span style="
-            background: linear-gradient(to right, #ff00ff, #000000);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        ">Simulateur</span> de rentabilité immobilière
-    </h1>
+/* ✅ Valeurs min/max : fond blanc, texte noir, sans encadrement */
+[data-testid="stSlider"] div[data-testid="stTickBar"] > div {
+    background: none !important;
+    background-color: white !important;
+    color: black !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+</style>
 """, unsafe_allow_html=True)
 
 
