@@ -6,7 +6,7 @@ import numpy as np
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide") 
 st.markdown("""
     <style>
-    /* Titre Lexyo */
+    /* Titre Lexyo aligné gauche */
     h1, h2 {
         text-align: left !important;
         padding-left: 1rem;
@@ -18,25 +18,24 @@ st.markdown("""
         padding-left: 1rem;
     }
 
-    /* --- SLIDER STYLES --- */
-
-    /* ✅ BARRE ACTIVE de TOUS les sliders */
-    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
+    /* Sliders - ligne active (track) en rose */
+    [data-testid="stSlider"] .css-1c5dwdn,  /* classe track pleine */
+    [data-testid="stSlider"] .css-14gqq1x {  /* classe track fond */
         background-color: #ff00ff !important;
     }
 
-    /* ✅ POINT CURSEUR (thumb) de TOUS les sliders */
-    [data-baseweb="slider"] span[role="slider"] {
+    /* Sliders - curseur (thumb) rose */
+    [data-testid="stSlider"] .css-1n76uvr {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* ✅ FONDS min/max (blanc propre, texte noir) */
-    [data-baseweb="slider"] > div > div > div > div {
+    /* Supprimer les arrière-plans min/max */
+    [data-testid="stSlider"] .css-1lcbmhc {
         background-color: white !important;
         color: black !important;
-        border: none !important;
         box-shadow: none !important;
+        border: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
