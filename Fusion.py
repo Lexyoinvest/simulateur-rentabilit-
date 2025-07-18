@@ -21,11 +21,10 @@ st.markdown("""
         padding-left: 1rem;
     }
 
-    /* Sliders : barre active rose */
-    [data-baseweb="slider"] [data-testid="slider-track"] > div:first-child {
+    /* Sliders : fond rose pour la ligne active */
+    [data-baseweb="slider"] > div > div > div:first-child {
         background-color: #ff00ff !important;
     }
-
 
     /* Sliders : couleur du thumb (point mobile) */
     [data-baseweb="slider"] span[role="slider"] {
