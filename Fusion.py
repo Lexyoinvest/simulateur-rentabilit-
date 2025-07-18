@@ -26,19 +26,19 @@ st.markdown("""
         background: #ff00ff !important;
     }
 
-    /* ✅ Le point (thumb) des sliders en rose fluo */
-    [data-testid="stSlider"] span[role="slider"] {
+        /* Sliders : cercle (thumb) rose */
+    [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* ✅ Encadrement des extrémités des sliders (min/max) : texte noir sur fond blanc */
-    [data-testid="stSlider"] div[data-testid="stTickBar"] > div {
+    /* Sliders : valeurs min et max en noir sur blanc sans fond coloré */
+    [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
         color: black !important;
         border: none !important;
-        box-shadow: none !important;
-    }
+        box-shadow: none !important; 
+           }
     </style>
 """, unsafe_allow_html=True)
 
