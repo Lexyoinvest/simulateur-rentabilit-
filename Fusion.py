@@ -5,10 +5,9 @@ import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
-# 🌈 CSS global : sliders + titres alignés + couleurs
+# 🌈 CSS + JS pour forcer le rose sur les sliders (barre et point)
 st.markdown("""
     <style>
-    /* Titres alignés à gauche */
     h1, h2 {
         text-align: left !important;
         padding-left: 1rem;
@@ -26,16 +25,6 @@ st.markdown("""
         border: 2px solid #ff00ff !important;
     }
 
-    /* Barre active (track remplie) rose forcée */
-    [data-baseweb="slider"] > div > div > div:first-of-type {
-        background: #ff00ff !important;
-    }
-
-    /* Barre inactive (non remplie) légèrement grise */
-    [data-baseweb="slider"] > div > div > div:nth-of-type(2) {
-        background: #eee !important;
-    }
-
     /* Valeurs min/max sans fond rose */
     [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
@@ -44,9 +33,24 @@ st.markdown("""
         box-shadow: none !important;
     }
     </style>
+
+    <script>
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            document.querySelectorAll('[data-baseweb="slider"] > div > div > div:first-of-type').forEach(el => {
+                el.style.background = "#ff00ff";
+            });
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    </script>
 """, unsafe_allow_html=True)
 
-# 🎨 Titre avec Lexyo rose et Simulateur dégradé
+# 🎨 Titre stylisé
 st.markdown("""
     <h1 class="main-title">
         <span style="color: #ff00ff;">Lexyo</span>
