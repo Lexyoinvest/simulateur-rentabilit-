@@ -5,35 +5,35 @@ import numpy as np
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
-# 🌈 Custom CSS : Sliders + Titre aligné gauche + couleurs
+# ✅ CSS entièrement fonctionnel pour sliders + titres alignés
 st.markdown("""
     <style>
-    /* Titre principal et sous-titre alignés à gauche */
+    /* TITRES : alignement à gauche */
     h1, h2 {
         text-align: left !important;
         padding-left: 1rem;
     }
 
-    /* Titre Lexyo rose et Simulateur en dégradé */
     .main-title {
         font-size: 48px;
         font-weight: bold;
         padding-left: 1rem;
     }
 
-    /* Sliders : fond rose pour la ligne active */
-    [data-baseweb="slider"] > div > div > div:first-child {
+    /* 🌈 Barre rose fluo (remplie) */
+    div[data-baseweb="slider"] div[role="presentation"] > div:nth-child(2) {
         background-color: #ff00ff !important;
     }
 
-    /* Sliders : couleur du thumb (point mobile) */
-    [data-baseweb="slider"] span[role="slider"] {
+    /* 🌈 Point mobile rose fluo */
+    div[data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* Sliders : valeurs min et max (fond blanc, texte noir) */
-    [data-baseweb="slider"] > div > div > div > div {
+    /* ✅ Min/max : fond blanc, texte noir, pas de bordure */
+    div[data-baseweb="slider"] div[role="presentation"] > div:first-child,
+    div[data-baseweb="slider"] div[role="presentation"] > div:last-child {
         background-color: white !important;
         color: black !important;
         border: none !important;
@@ -53,6 +53,7 @@ st.markdown("""
         ">Simulateur</span> de rentabilité immobilière
     </h1>
 """, unsafe_allow_html=True)
+
 
 
 # Menu à gauche
