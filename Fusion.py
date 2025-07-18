@@ -2,57 +2,74 @@ import streamlit as st
 from dataclasses import dataclass, field
 import pandas as pd
 import numpy as np
+import streamlit.components.v1 as components  # 👈 AJOUT pour le slider personnalisé
 
+# 🧱 2. CONFIGURATION DE LA PAGE
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
-# ✅ CSS entièrement fonctionnel pour sliders + titres alignés
+# 🎨 3. STYLING : Titre + CSS global
 st.markdown("""
     <style>
-    /* TITRES : alignement à gauche */
-    h1, h2 {
-        text-align: left !important;
+    .title-container {
         padding-left: 1rem;
+        text-align: left;
     }
 
-    .main-title {
+    .lexyo-title {
         font-size: 48px;
         font-weight: bold;
-        padding-left: 1rem;
+        color: #ff00ff;
+        display: inline;
     }
 
-    /* 🌈 Barre rose fluo (remplie) */
-    div[data-baseweb="slider"] div[role="presentation"] > div:nth-child(2) {
-        background-color: #ff00ff !important;
-    }
-
-    /* 🌈 Point mobile rose fluo */
-    div[data-baseweb="slider"] span[role="slider"] {
-        background-color: #ff00ff !important;
-        border: 2px solid #ff00ff !important;
-    }
-
-    /* ✅ Min/max : fond blanc, texte noir, pas de bordure */
-    div[data-baseweb="slider"] div[role="presentation"] > div:first-child,
-    div[data-baseweb="slider"] div[role="presentation"] > div:last-child {
-        background-color: white !important;
-        color: black !important;
-        border: none !important;
-        box-shadow: none !important;
+    .simu-title {
+        font-size: 48px;
+        font-weight: bold;
+        background: linear-gradient(to right, #ff00ff, #000000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline;
     }
     </style>
+
+    <div class="title-container">
+        <span class="lexyo-title">Lexyo </span>
+        <span class="simu-title">Simulateur</span>
+        <span style="font-size: 48px; font-weight: bold;"> de rentabilité immobilière</span>
+    </div>
 """, unsafe_allow_html=True)
 
-# 🎨 Titre Lexyo (rose) + Simulateur (dégradé)
-st.markdown("""
-    <h1 class="main-title">
-        <span style="color: #ff00ff;">Lexyo</span>
-        <span style="
-            background: linear-gradient(to right, #ff00ff, #000000);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        ">Simulateur</span> de rentabilité immobilière
-    </h1>
-""", unsafe_allow_html=True)
+# 🕹️ 4. SLIDER PERSONNALISÉ (à mettre à l'endroit voulu dans la page)
+components.html("""
+    <div style="padding-left: 1rem; padding-top: 2rem;">
+        <label for="customSlider" style="font-weight:bold;">Durée d’amortissement (années)</label>
+        <input type="range" id="customSlider" name="customSlider" min="5" max="50" value="20" 
+               oninput="document.getElementById('output').value=this.value" 
+               style="
+                   -webkit-appearance: none;
+                   width: 100%;
+                   height: 6px;
+                   background: linear-gradient(to right, #ff00ff, #ff00ff);
+                   border-radius: 5px;
+                   outline: none;
+               ">
+
+        <output id="output" style="
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 18px;
+            background: white;
+            border: none;
+            padding: 5px 10px;
+            color: black;
+        ">20</output>
+
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 4px;">
+            <span style="background:white; padding:2px 5px; color:black;">5</span>
+            <span style="background:white; padding:2px 5px; color:black;">50</span>
+        </div>
+    </div>
+""", height=150)
 
 
 
