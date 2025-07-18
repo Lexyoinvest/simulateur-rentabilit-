@@ -3,43 +3,46 @@ from dataclasses import dataclass, field
 import pandas as pd
 import numpy as np
 
-st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide") 
+st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
+
+# 🌈 Custom CSS : Sliders + Titre aligné gauche + couleurs
 st.markdown("""
     <style>
-    /* Titre Lexyo aligné gauche */
+    /* Titre principal et sous-titre alignés à gauche */
     h1, h2 {
         text-align: left !important;
         padding-left: 1rem;
     }
 
+    /* Titre Lexyo rose et Simulateur en dégradé */
     .main-title {
         font-size: 48px;
         font-weight: bold;
         padding-left: 1rem;
     }
 
-    /* Sliders - ligne active (track) en rose */
-    [data-testid="stSlider"] .css-1c5dwdn,  /* classe track pleine */
-    [data-testid="stSlider"] .css-14gqq1x {  /* classe track fond */
+    /* Sliders : fond rose pour la ligne active */
+    [data-baseweb="slider"] > div > div > div:first-child {
         background-color: #ff00ff !important;
     }
 
-    /* Sliders - curseur (thumb) rose */
-    [data-testid="stSlider"] .css-1n76uvr {
+    /* Sliders : couleur du thumb (point mobile) */
+    [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* Supprimer les arrière-plans min/max */
-    [data-testid="stSlider"] .css-1lcbmhc {
+    /* Sliders : valeurs min et max (fond blanc, texte noir) */
+    [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
         color: black !important;
-        box-shadow: none !important;
         border: none !important;
+        box-shadow: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
+# 🎨 Titre Lexyo (rose) + Simulateur (dégradé)
 st.markdown("""
     <h1 class="main-title">
         <span style="color: #ff00ff;">Lexyo</span>
