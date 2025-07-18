@@ -5,34 +5,38 @@ import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
-# 🌈 Custom CSS : Sliders + Titre aligné gauche + couleurs
+# 🌈 CSS global : sliders + titres alignés + couleurs
 st.markdown("""
     <style>
-    /* Titre principal et sous-titre alignés à gauche */
+    /* Titres alignés à gauche */
     h1, h2 {
         text-align: left !important;
         padding-left: 1rem;
     }
 
-    /* Titre Lexyo rose et Simulateur en dégradé */
     .main-title {
         font-size: 48px;
         font-weight: bold;
         padding-left: 1rem;
     }
 
-    /* Sliders : fond rose pour la ligne active */
-    [data-baseweb="slider"] > div > div > div:first-child {
-        background-color: #ff00ff !important;
-    }
-
-    /* Sliders : couleur du thumb (point mobile) */
+    /* Curseur (thumb) rose */
     [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* Sliders : valeurs min et max (fond blanc, texte noir) */
+    /* Barre active (track remplie) rose forcée */
+    [data-baseweb="slider"] > div > div > div:first-of-type {
+        background: #ff00ff !important;
+    }
+
+    /* Barre inactive (non remplie) légèrement grise */
+    [data-baseweb="slider"] > div > div > div:nth-of-type(2) {
+        background: #eee !important;
+    }
+
+    /* Valeurs min/max sans fond rose */
     [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
         color: black !important;
@@ -42,7 +46,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🎨 Titre Lexyo (rose) + Simulateur (dégradé)
+# 🎨 Titre avec Lexyo rose et Simulateur dégradé
 st.markdown("""
     <h1 class="main-title">
         <span style="color: #ff00ff;">Lexyo</span>
@@ -53,6 +57,7 @@ st.markdown("""
         ">Simulateur</span> de rentabilité immobilière
     </h1>
 """, unsafe_allow_html=True)
+
 
 # Menu à gauche
 regime = st.sidebar.selectbox("Choisissez le régime fiscal :", ["LMNP réel", "LMNP Micro-Bic", "LMP réel", "SCI à l'IS", "SCI à l'IR", "SARL de famille", "Holding à l'IS", "Location nue", "Micro foncier", "Réel foncier"])
