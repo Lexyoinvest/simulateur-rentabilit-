@@ -5,48 +5,52 @@ import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
-# 🌈 Personnalisation avancée des sliders et du titre
+# 🌈 Custom CSS : Sliders + Titre aligné gauche + couleurs
 st.markdown("""
     <style>
-    /* Titre personnalisé */
-    h1 {
+    /* Titre principal et sous-titre alignés à gauche */
+    h1, h2 {
+        text-align: left !important;
+        padding-left: 1rem;
+    }
+
+    /* Titre Lexyo rose et Simulateur en dégradé */
+    .main-title {
         font-size: 48px;
-        text-align: center;
+        font-weight: bold;
+        padding-left: 1rem;
     }
 
-    /* Sliders : couleur rose fluo pour la barre */
-    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
-        background: #ff00ff !important;
+    /* Sliders : fond rose pour la ligne active */
+    [data-baseweb="slider"] > div > div > div:first-child {
+        background-color: #ff00ff !important;
     }
 
-    /* Sliders : le cercle (thumb) aussi en rose fluo */
+    /* Sliders : couleur du thumb (point mobile) */
     [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* Supprimer les encadrés colorés autour des valeurs min/max */
+    /* Sliders : valeurs min et max (fond blanc, texte noir) */
     [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
         color: black !important;
-        border-radius: 4px !important;
         border: none !important;
         box-shadow: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 🎨 Titre : Lexyo en rose, Simulateur en dégradé, centré
+# 🎨 Titre Lexyo (rose) + Simulateur (dégradé)
 st.markdown("""
-    <h1>
-        <span style="color: #ff00ff; font-weight: bold;">Lexyo</span>
+    <h1 class="main-title">
+        <span style="color: #ff00ff;">Lexyo</span>
         <span style="
             background: linear-gradient(to right, #ff00ff, #000000);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: bold;
-        "> Simulateur</span>
-        de rentabilité immobilière
+        ">Simulateur</span> de rentabilité immobilière
     </h1>
 """, unsafe_allow_html=True)
 
