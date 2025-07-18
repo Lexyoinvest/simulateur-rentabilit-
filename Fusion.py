@@ -5,53 +5,45 @@ import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
-# 🌈 Style personnalisé des sliders
+# 🌈 Custom CSS : Sliders + Titre aligné gauche + couleurs
 st.markdown("""
     <style>
-    /* --- TITRE --- */
-    h1 {
-        font-size: 48px;
-        font-weight: bold;
-        text-align: left;
+    /* Titre principal et sous-titre alignés à gauche */
+    h1, h2 {
+        text-align: left !important;
         padding-left: 1rem;
     }
 
-    /* --- POINT / CURSEUR --- */
+    /* Titre Lexyo rose et Simulateur en dégradé */
+    .main-title {
+        font-size: 48px;
+        font-weight: bold;
+        padding-left: 1rem;
+    }
+
+    <style>
+    /* Couleur de la ligne remplie */
+    [data-baseweb="slider"] > div > div {
+        background: #ff00ff !important;
+    } 
+    
+    /* Sliders : couleur du thumb (point mobile) */
     [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* --- BARRE REMPLIE ACTIVE --- */
-    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
-        background-color: #ff00ff !important;
-    }
-
-    /* --- VALEURS MIN/MAX --- */
+    /* Sliders : valeurs min et max (fond blanc, texte noir) */
     [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
         color: black !important;
         border: none !important;
         box-shadow: none !important;
     }
-
     </style>
 """, unsafe_allow_html=True)
 
-# 🎨 Titre stylisé
-st.markdown("""
-    <h1>
-        <span style="color: #ff00ff;">Lexyo</span>
-        <span style="
-            background: linear-gradient(to right, #ff00ff, #000000);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        ">Simulateur</span> de rentabilité immobilière
-    </h1>
-""", unsafe_allow_html=True)
-
-
-# 🎨 Titre stylisé
+# 🎨 Titre Lexyo (rose) + Simulateur (dégradé)
 st.markdown("""
     <h1 class="main-title">
         <span style="color: #ff00ff;">Lexyo</span>
