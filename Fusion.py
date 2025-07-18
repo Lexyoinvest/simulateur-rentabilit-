@@ -21,18 +21,18 @@ st.markdown("""
         padding-left: 1rem;
     }
 
-    /* Couleur de la portion active du slider */
-    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
-        background: #ff00ff !important;
+    /* Sliders : fond rose pour la ligne active */
+    [data-baseweb="slider"] > div > div > div:first-child {
+        background-color: #ff00ff !important;
     }
 
-    /* Sliders : cercle (thumb) rose fluo */
+    /* Sliders : couleur du thumb (point mobile) */
     [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* Sliders : min/max (texte noir, fond blanc, sans bord) */
+    /* Sliders : valeurs min et max (fond blanc, texte noir) */
     [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
         color: black !important;
@@ -53,7 +53,6 @@ st.markdown("""
         ">Simulateur</span> de rentabilité immobilière
     </h1>
 """, unsafe_allow_html=True)
-
 
 
 # Menu à gauche
