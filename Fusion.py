@@ -5,50 +5,51 @@ import pandas as pd
 
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
-# 🌈 CSS + JS pour forcer le rose sur les sliders (barre et point)
+# 🌈 Style personnalisé des sliders
 st.markdown("""
     <style>
-    h1, h2 {
-        text-align: left !important;
-        padding-left: 1rem;
-    }
-
-    .main-title {
+    /* --- TITRE --- */
+    h1 {
         font-size: 48px;
         font-weight: bold;
+        text-align: left;
         padding-left: 1rem;
     }
 
-    /* Curseur (thumb) rose */
+    /* --- POINT / CURSEUR --- */
     [data-baseweb="slider"] span[role="slider"] {
         background-color: #ff00ff !important;
         border: 2px solid #ff00ff !important;
     }
 
-    /* Valeurs min/max sans fond rose */
+    /* --- BARRE REMPLIE ACTIVE --- */
+    [data-baseweb="slider"] div[aria-label="slider"] > div:first-child {
+        background-color: #ff00ff !important;
+    }
+
+    /* --- VALEURS MIN/MAX --- */
     [data-baseweb="slider"] > div > div > div > div {
         background-color: white !important;
         color: black !important;
         border: none !important;
         box-shadow: none !important;
     }
+
     </style>
-
-    <script>
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            document.querySelectorAll('[data-baseweb="slider"] > div > div > div:first-of-type').forEach(el => {
-                el.style.background = "#ff00ff";
-            });
-        });
-    });
-
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-    </script>
 """, unsafe_allow_html=True)
+
+# 🎨 Titre stylisé
+st.markdown("""
+    <h1>
+        <span style="color: #ff00ff;">Lexyo</span>
+        <span style="
+            background: linear-gradient(to right, #ff00ff, #000000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        ">Simulateur</span> de rentabilité immobilière
+    </h1>
+""", unsafe_allow_html=True)
+
 
 # 🎨 Titre stylisé
 st.markdown("""
