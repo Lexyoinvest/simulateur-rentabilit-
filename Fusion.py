@@ -3,6 +3,29 @@ from dataclasses import dataclass, field
 import pandas as pd
 import numpy as np
 
+def login():
+    try:
+        credentials = pd.read_csv("credentials.csv")
+    except FileNotFoundError:
+        st.error("Fichier des identifiants manquant.")
+        st.stop()
+
+    st.markdown("### Connexion")
+    username = st.text_input("Identifiant")
+    password = st.text_input("Mot de passe", type="password")
+
+    if st.button("Se connecter"):
+        if ((credentials['username'] == username) & (credentials['password'] == password)).any():
+            st.session_state['logged_in'] = True
+            st.session_state['username'] = username
+            st.experimental_rerun()
+        else:
+            st.error("Identifiant ou mot de passe incorrect")
+
+if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
+    login()
+    st.stop()
+    
 st.set_page_config(page_title="Lexyo Simulateur de Rentabilité Immobilière", layout="wide")
 
 # 🌈 Custom CSS : Sliders + Titre aligné gauche + couleurs
