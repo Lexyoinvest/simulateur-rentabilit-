@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 import numpy as np
 
+# 🔐 Interface de connexion stylisée
 def login():
     try:
         credentials = pd.read_csv("credentials.csv")
@@ -10,19 +11,30 @@ def login():
         st.error("Fichier des identifiants manquant.")
         st.stop()
 
-    st.markdown("### Connexion")
+    # Branding Lexyo : logo + titre
+    st.markdown("""
+        <div style='text-align: center; padding-top: 40px; padding-bottom: 20px;'>
+            <h1 style='color: #ff00ff; font-size: 42px; margin-bottom: 0;'>Lexyo</h1>
+            <h3 style='color: #333;'>Accès au simulateur de rentabilité immobilière</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
     username = st.text_input("Identifiant")
     password = st.text_input("Mot de passe", type="password")
 
-    if st.button("Se connecter"):
+    login_btn = st.button("🔓 Se connecter", use_container_width=True)
+
+    if login_btn:
         if ((credentials['username'] == username) & (credentials['password'] == password)).any():
             st.session_state['logged_in'] = True
             st.session_state['username'] = username
-            st.experimental_rerun()
+            st.rerun()  # Force le rafraîchissement
         else:
-            st.error("Identifiant ou mot de passe incorrect")
+            st.error("Identifiant ou mot de passe incorrect.")
 
+# ✅ Empêche d'accéder à l'app si non connecté
 if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
+    st.set_page_config(page_title="Connexion Lexyo", layout="centered")
     login()
     st.stop()
     
