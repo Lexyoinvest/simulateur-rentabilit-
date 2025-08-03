@@ -11,18 +11,12 @@ def login():
         st.error("Fichier des identifiants manquant.")
         st.stop()
 
-    # Branding Lexyo : logo + titre
-    st.markdown("""
-        <div style='text-align: center; padding-top: 40px; padding-bottom: 20px;'>
-            <h1 style='color: #ff00ff; font-size: 42px; margin-bottom: 0;'>Lexyo</h1>
-            <h3 style='color: #333;'>Accès au simulateur de rentabilité immobilière</h3>
-        </div>
-    """, unsafe_allow_html=True)
+    
 
     username = st.text_input("Identifiant")
     password = st.text_input("Mot de passe", type="password")
 
-    login_btn = st.button("🔓 Se connecter", use_container_width=True)
+    login_btn = st.button("Se connecter", use_container_width=True)
 
     if login_btn:
         if ((credentials['username'] == username) & (credentials['password'] == password)).any():
